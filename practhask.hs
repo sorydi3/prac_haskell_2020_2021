@@ -1,3 +1,5 @@
+--import Data.Set
+import qualified Data.Set as Set
 type Var = String
 data LT = LTVar Var | LTAbs Var LT | LTApl LT LT
 
@@ -22,24 +24,34 @@ instance Show LT where
 -- Funció per mirar si una variable apareix dins un lambda-terme
 -- Exemple: varInLT (LTAbs "x" (LTVar "y")) "z" -> False
 -- Exemple: varInLT (LTApl (LTVar "y") (LTAbs "z" (LTVar "x"))) "x" -> True
-varInLT :: LT -> String -> Bool
+varInLT :: LT -> Var -> Bool
 varInLT (LTVar x) y = x == y 
 varInLT (LTAbs x lt) y = if x == y then True else varInLT lt y
 varInLT (LTApl lt1 lt2) y = varInLT lt1 y || varInLT lt2 y
 
 -- Funció per mirar quines variables estan lligades a un lambda-terme
-boundVars :: LT -> [String]
+boundVars :: LT -> [Var]
 boundVars (LTVar x) = []
 boundVars (LTAbs x lt) = x:boundVars lt -- Si hi ha una abstraccio afegim la variable a la llista de variables lligades
 boundVars (LTApl lt1 lt2) = concat [boundVars lt1, boundVars lt2]
 
--- Estoy en ello
-allVars :: LT -> [String]
-allVars (LTVar x) = [x]
-allVars (LTAbs x lt) = if elem x (allVars lt) then ["a"] else ["b"]
+-- Funció per retornar totes les variables que hi ha en un lambda-terme
+allVars :: LT -> (Set.Set Var)
+allVars (LTVar x) = Set.fromList [x]
+allVars (LTAbs x lt) = Set.insert x (allVars lt)
+allVars (LTApl lt1 lt2) = Set.union (allVars lt1) (allVars lt2)
+
 
 -- Estoy en ello
-freeVars :: LT -> [String]
-freeVars (LTVar x) = [x] -- Si nomes hi ha una variable, llavors és lliure
-freeVars (LTAbs x lt) = if varInLT lt x then freeVars lt else []
-freeVars (LTApl lt1 lt2) = concat [freeVars lt1, freeVars lt2]
+freeVarsX :: LT -> (Set.Set Var)
+freeVarsX (LTVar x) = Set.fromList [x] -- Si nomes hi ha una variable, llavors és lliure
+freeVarsX (LTAbs x lt) = Set.difference (allVars lt) (Set.fromList (x:(boundVars lt)))
+freeVarsX (LTApl lt1 lt2) = Set.union (freeVarsX lt1) (freeVarsX lt2)
+
+freeAndBoundVars :: LT -> ([Var], [Var])
+freeAndBoundVars (LTAbs x lt) = (iFreeVars lt [x], [])
+
+-- Lambda-terme i llista de variables lligades
+iFreeVars :: LT -> [Var] -> [Var]
+iFreeVars (LTVar x) xs = if elem x xs then [] else [x]
+iFreeVars (LTAbs x lt) xs = if elem x xs then iFreeVars lt xs else iFreeVars lt (x:xs)
