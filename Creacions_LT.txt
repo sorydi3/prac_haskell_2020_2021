@@ -1,0 +1,96 @@
+(\x. (\y. (\z. (((x z) z) (y (x z))))))
+
+(x z)
+LTApl (LTVar "x") (LTVar "z")
+
+((x z) z)
+LTApl (LTApl (LTVar "x") (LTVar "z")) (LTVar "z")
+
+(x z)
+LTApl (LTVar "x") (LTVar "z")
+
+(y (x z))
+LTApl (LTVar "y") (LTApl (LTVar "x") (LTVar "z"))
+
+(((x z) z) (y (x z)))
+LTApl (LTApl (LTApl (LTVar "x") (LTVar "z")) (LTVar "z")) (LTApl (LTVar "y") (LTApl (LTVar "x") (LTVar "z")))
+
+(\z. (((x z) z) (y (x z))))
+LTAbs "z" (LTApl (LTApl (LTApl (LTVar "x") (LTVar "z")) (LTVar "z")) (LTApl (LTVar "y") (LTApl (LTVar "x") (LTVar "z"))))
+
+(\y. (\z. (((x z) z) (y (x z)))))
+LTAbs "y" (LTAbs "z" (LTApl (LTApl (LTApl (LTVar "x") (LTVar "z")) (LTVar "z")) (LTApl (LTVar "y") (LTApl (LTVar "x") (LTVar "z")))))
+
+(\x. (\y. (\z. (((x z) z) (y (x z))))))
+LTAbs "x" (LTAbs "y" (LTAbs "z" (LTApl (LTApl (LTApl (LTVar "x") (LTVar "z")) (LTVar "z")) (LTApl (LTVar "y") (LTApl (LTVar "x") (LTVar "z"))))))
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+((\n. (\f. (\x. (f ((n f) x))))) (\g. (\y. (g y))))
+
+(n f)
+LTApl (LTVar "n") (LTVar "f")
+
+((n f) x)
+LTApl (LTApl (LTVar "n") (LTVar "f")) (LTVar "x")
+
+(f ((n f) x))
+LTApl (LTVar "f") (LTApl (LTApl (LTVar "n") (LTVar "f")) (LTVar "x"))
+
+(\x. (f ((n f) x)))
+LTAbs "x" (LTApl (LTVar "f") (LTApl (LTApl (LTVar "n") (LTVar "f")) (LTVar "x")))
+
+(\f. (\x. (f ((n f) x))))
+LTAbs "f" (LTAbs "x" (LTApl (LTVar "f") (LTApl (LTApl (LTVar "n") (LTVar "f")) (LTVar "x"))))
+
+(\n. (\f. (\x. (f ((n f) x)))))
+LTAbs "n" (LTAbs "f" (LTAbs "x" (LTApl (LTVar "f") (LTApl (LTApl (LTVar "n") (LTVar "f")) (LTVar "x")))))
+
+(g y)
+LTApl (LTVar "g") (LTVar "y")
+
+(\y. (g y))
+LTAbs "y" (LTApl (LTVar "g") (LTVar "y"))
+
+(\g. (\y. (g y)))
+LTAbs "g" (LTAbs "y" (LTApl (LTVar "g") (LTVar "y")))
+
+((\n. (\f. (\x. (f ((n f) x))))) (\g. (\y. (g y))))
+LTApl (LTAbs "n" (LTAbs "f" (LTAbs "x" (LTApl (LTVar "f") (LTApl (LTApl (LTVar "n") (LTVar "f")) (LTVar "x")))))) (LTAbs "g" (LTAbs "y" (LTApl (LTVar "g") (LTVar "y"))))
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+((\x. (x y)) (\z. w (\w. (((w z) y) x))))
+
+(w z)
+LTApl (LTVar "w") (LTVar "z")
+
+((w z) y)
+LTApl (LTApl (LTVar "w") (LTVar "z")) (LTVar "y")
+
+(((w z) y) x)
+LTApl (LTApl (LTApl (LTVar "w") (LTVar "z")) (LTVar "y")) (LTVar "x")
+
+(\w. (((w z) y) x))
+LTAbs "w" (LTApl (LTApl (LTApl (LTVar "w") (LTVar "z")) (LTVar "y")) (LTVar "x"))
+
+w (\w. (((w z) y) x))
+LTApl (LTVar "w") (LTAbs "w" (LTApl (LTApl (LTApl (LTVar "w") (LTVar "z")) (LTVar "y")) (LTVar "x")))
+
+(\z. w (\w. (((w z) y) x)))
+LTAbs "z" (LTApl (LTVar "w") (LTAbs "w" (LTApl (LTApl (LTApl (LTVar "w") (LTVar "z")) (LTVar "y")) (LTVar "x"))))
+
+(x y)
+LTApl (LTVar "x") (LTVar "y)
+
+(\x. (x y))
+LTAbs "x" (LTApl (LTVar "x") (LTVar "y))
+
+LTApl (LTAbs "x" (LTApl (LTVar "x") (LTVar "y"))) (LTAbs "z" (LTApl (LTVar "w") (LTAbs "w" (LTApl (LTApl (LTApl (LTVar "w") (LTVar "z")) (LTVar "y")) (LTVar "x")))))
+
+
+
+
+
+
+
