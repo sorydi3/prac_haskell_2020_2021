@@ -41,7 +41,8 @@ subs_i la@(La v lt) x e | x == v = subs_i lt x e
                         | otherwise = La v (subs_i lt x e)
 
 
---  subs (La "x" (AP (Va "x") (La "x" (Va "x")))) (AP (Va "y") (Va "z"))
+-- subs (La "x" (AP (Va "x") (La "x" (Va "x")))) (AP (Va "y") (Va "z"))
+
 --WORKING ON IT
 subs::LT->LT->LT
 subs var@(Va x) _ = error "No es un redex"
@@ -49,15 +50,24 @@ subs (AP a b) e =  AP (subs a b) e
 subs exp@(La x lt) e = subs_i exp x e
 
 
-
-
-
 -- 3 -- 
 
 esta_normal::LT->Bool
 esta_normal (Va v) = True
---esta_normal (La v lt) | lt == LT
-esta_normal (AP a b) = esta_normal a
+esta_normal (La v lt) = case lt of
+    (La v t) -> esta_normal t
+    (AP a b) -> esta_normal a && esta_normal b
+    (Va a) -> False
+esta_normal (AP a b) =  dreta && esquerra
+    where 
+    dreta = case a of
+        (La v t) -> esta_normal t
+        (AP c c') -> esta_normal c && esta_normal c'
+        (Va e) -> True
+    esquerra = case b of
+        (La v t) -> esta_normal t
+        (AP c c') -> esta_normal c && esta_normal c'
+        (Va e) -> True
 
 -- 3 
 
