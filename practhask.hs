@@ -17,8 +17,6 @@ instance Eq LT where
 
 -- 2
 
-subs :: LT -> LT -> LT
-subs x y = error " todo later"
 
 -- working ---
 freeVars :: LT -> [Var]
@@ -41,9 +39,11 @@ subs_i ap@(AP a b) x e = AP (subs_i a x e) (subs_i b x e)
 subs_i la@(La v lt) x e | x == v = subs_i lt x e
                         | otherwise = La v (subs_i lt x e)
 
---subs::LT->LT->LT
---subs (Va x) _ = Va x
---subs (AP a b) _ =  error "sdlsdk"
+
+subs::LT->LT->LT
+subs var@(Va x) _ = error "No es un redex"
+subs (AP a b) e =  AP (subs a b) e 
+subs exp@(La x lt) e = subs_i exp x e
 
 
 
