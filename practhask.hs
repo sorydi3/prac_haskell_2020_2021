@@ -35,6 +35,16 @@ freeAndBoundVars (Va v) = ([v],[])
 freeAndBoundVars (AP a b) = (fst (freeAndBoundVars a) `union`  fst (freeAndBoundVars b),snd (freeAndBoundVars a) `union` snd (freeAndBoundVars b))
 freeAndBoundVars (La v lt) = (delete v $ fst (freeAndBoundVars lt),if v `elem` fst (freeAndBoundVars lt) then v:snd (freeAndBoundVars lt) else snd (freeAndBoundVars lt))
 
+subs_i :: LT->Var->LT->LT
+subs_i var@(Va v) x e = if v==x then e else var
+subs_i ap@(AP a b) x e = AP (subs_i a x e) (subs_i b x e)   
+subs_i la@(La v lt) x e | x == v = subs_i lt x e
+                        | otherwise = La v (subs_i lt x e)
+
+--subs::LT->LT->LT
+--subs (Va x) _ = Va x
+--subs (AP a b) _ =  error "sdlsdk"
+
 
 
 -- 3 -- 
