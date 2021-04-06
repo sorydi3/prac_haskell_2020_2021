@@ -30,15 +30,6 @@ freeVars (AP a b) = freeVars a `union` freeVars b
 freeVars (La v lt) = delete v $ freeVars lt
 
 
-boundVars :: LT -> [Var]
-boundVars (Va v) = [v]
-boundVars (AP a b) = boundVars a `union` boundVars b
-
-
-difference :: (Eq a) => [a] -> [a] -> [a]
-difference xs excludes = filter (not . (`elem` excludes)) xs
-
-
 freeAndBoundVars :: LT -> ([Var],[Var])
 freeAndBoundVars (Va v) = ([v],[])
 freeAndBoundVars (AP a b) = (fst (freeAndBoundVars a) `union`  fst (freeAndBoundVars b),snd (freeAndBoundVars a) `union` snd (freeAndBoundVars b))
