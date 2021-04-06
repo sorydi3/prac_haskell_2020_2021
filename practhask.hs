@@ -40,9 +40,11 @@ difference xs excludes = filter (not . (`elem` excludes)) xs
 
 
 freeAndBoundVars :: LT -> ([Var],[Var])
-freeAndBoundVars (Va v) = ([v],[v])
+freeAndBoundVars (Va v) = ([v],[])
 freeAndBoundVars (AP a b) = (fst (freeAndBoundVars a) `union`  fst (freeAndBoundVars b),snd (freeAndBoundVars a) `union` snd (freeAndBoundVars b))
-freeAndBoundVars (La v lt) = (delete v $ fst (freeAndBoundVars lt),if v `elem` fst (freeAndBoundVars lt) then difference (delete v $  fst (freeAndBoundVars lt)) (snd (freeAndBoundVars lt)) else snd (freeAndBoundVars lt))
+freeAndBoundVars (La v lt) = (delete v $ fst (freeAndBoundVars lt),if v `elem` fst (freeAndBoundVars lt) then v:snd (freeAndBoundVars lt) else snd (freeAndBoundVars lt))
+
+
 
 -- 3 -- 
 
