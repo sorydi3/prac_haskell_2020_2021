@@ -33,21 +33,68 @@ freeAndBoundVars (Va v) = ([v],[])
 freeAndBoundVars (AP a b) = (fst (freeAndBoundVars a) `union`  fst (freeAndBoundVars b),snd (freeAndBoundVars a) `union` snd (freeAndBoundVars b))
 freeAndBoundVars (La v lt) = (delete v $ fst (freeAndBoundVars lt),if v `elem` fst (freeAndBoundVars lt) then v:snd (freeAndBoundVars lt) else snd (freeAndBoundVars lt))
 
--- subs_i (La "x" (AP (Va "x") (Va "x"))) "x" (AP (Va "y") (Va "z"))
+
+fresh :: Var ->LT
+fresh x = Va x 
+
+-- PRE : Un lamba Terme de tipus LT
+-- POST : Retorna una llista de totes les variables de un lamba term ( lliures y lligades)
+variables :: LT->[Var]
+variables (Va e) = [e]
+variables (AP a b) = variables a `union` variables b
+variables (La x lt) = variables lt `union` [x]
+
+
+--subs_i (La "x" (AP (Va "x") (Va "x"))) "x" (AP (Va "y") (Va "z"))
 subs_i :: LT->Var->LT->LT
 subs_i var@(Va v) x e = if v==x then e else var
 subs_i ap@(AP a b) x e = AP (subs_i a x e) (subs_i b x e)   
 subs_i la@(La v lt) x e | x == v = subs_i lt x e
                         | otherwise = La v (subs_i lt x e)
 
+-- SUBSTITUCIO ALFA                        
+subs_a :: LT->Var->LT->LT
+subs_a var@(Va v) x e = if v==x then e else var
+subs_a ap@(AP a b) x e = AP (subs_a a x e) (subs_a b x e)   
+subs_a la@(La v lt) x e | x == v = la
+                        | otherwise = La v (subs_a lt x e)
+
+
+charToString :: [Char] -> [Var]
+charToString [] =[]
+charToString (c:cs) = [c]:charToString cs
 
 -- subs (La "x" (AP (Va "x") (La "x" (Va "x")))) (AP (Va "y") (Va "z"))
 
---WORKING ON IT
+-- WORKING PARTIALLY WITH --\\ alfa (La "x" (Va "x")) ["x"] --> RESULT EQUAL --> (\t.t) --
+alfa::LT ->[Var]->LT
+alfa (AP a b) vars = AP (alfa a vars) (alfa b vars)
+alfa (La x lt) vars | x `elem` vars = La t $ (alfa e' vars)
+                    | otherwise = La x  $ (alfa lt vars)
+                    where
+                     var = (variables lt)
+                     v = charToString ['a'..'z']
+                     t = last [ x | x <- v ,let lis = var `union` vars ,not (x`elem` lis)]
+                     e' = subs_a lt x (fresh t) 
+alfa e _ = e
+
+
+-- PRE : UN REDEX 
+-- POST : RETORNA UN ALTRE LAMBDA TERME DESPRES DE FER LA SUBSTITUCIO
+
 subs::LT->LT->LT
 subs var@(Va x) _ = error "No es un redex"
-subs (AP a b) e =  AP (subs a b) e 
-subs exp@(La x lt) e = subs_i exp x e
+subs (La x lt) v = subs_a lt' x v
+      where
+          lt'= alfa lt (freeVars v)
+          
+
+
+                                
+
+--subs var@(Va x) _ = error "No es un redex"
+--subs (AP a b) e =  AP (subs a b) e 
+--subs exp@(La x lt) e = subs_i exp x e 
 
 
 -- 3 -- 
@@ -70,7 +117,14 @@ esta_normal (AP a b) =  dreta && esquerra
         (Va e) -> True
 
 -- 3 
-
+fresh_ :: [String] -> String
+fresh_ = foldl diagonalise "a"
+diagonalise [] [] = "a" -- diagonalised any way
+diagonalise [] (y:ys) | y == 'a' = "b" -- diagonalise on this character
+                      | otherwise = "a"
+diagonalise s [] = s -- anyway s is differnt from t
+diagonalise s@(x:xs) (y:ys) | x /= y = s -- differs at this position anyway
+                            | otherwise = x : diagonalise xs ys
 -- 4 
 
 -- 5 
@@ -82,4 +136,5 @@ esta_normal (AP a b) =  dreta && esquerra
 -- 8
 
 -- 9
---sdsdsd--
+
+-- 10
