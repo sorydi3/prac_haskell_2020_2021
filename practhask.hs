@@ -87,6 +87,19 @@ beta_redueix x@(La v lt) = x
 beta_redueix (AP (La v lt1) lt2) = subst lt1 v lt2
 beta_redueix x@(AP lt1 lt2) = x
 
+
+--          Funció on es passa un lambda-terme i s'aplica la primera beta-reducció en ordre normal.
+--          Si el lambda-terme passat no té cap redex, retorna el mateix lambda-terme.
+-- Param 1: Lambda-terme sobre el que realitzar la reducció
+-- Retorna: El lambda-terme <param 1> amb la primera beta-reducció en ordre normal feta, 
+--          si no és un redex retorna el mateix lambda-terme
+redueix_un_n :: LT -> LT
+redueix_un_n x@(Va v) = x
+redueix_un_n (La v lt) = (La v (redueix_un_n lt))
+redueix_un_n x@(AP (La v lt1) lt2) = beta_redueix x
+redueix_un_n (AP lt1 lt2) = (AP (redueix_un_n lt1) (redueix_un_n lt2))
+
+
 -- 5 
 
 -- 6 
