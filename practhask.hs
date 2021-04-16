@@ -76,7 +76,16 @@ esta_normal (La v lt) = esta_normal lt
 esta_normal (AP (La v lt) _) = False
 esta_normal (AP a b) = esta_normal a && esta_normal b 
 
--- 4 
+
+--          Funció que rep un lambda-terme que sigui un redex i el resol. 
+--          Si el lambda-terme passat no és un redex, retorna el mateix lambda-terme
+-- Param 1: Lambda-terme sobre el que realitzar la reducció
+-- Retorna: El lambda-terme <param 1> amb la substitució feta, si no és un redex retorna el mateix lambda-terme
+beta_redueix :: LT -> LT
+beta_redueix x@(Va v) = x
+beta_redueix x@(La v lt) = x
+beta_redueix (AP (La v lt1) lt2) = subst lt1 v lt2
+beta_redueix x@(AP lt1 lt2) = x
 
 -- 5 
 
