@@ -110,17 +110,24 @@ l_normalitza_n :: LT -> [LT]
 l_normalitza_n x@(Va v) = [x]
 l_normalitza_n x = if esta_normal x then [x] else [x] ++ l_normalitza_n (redueix_un_n x) -- S'agrupen els dos casos, s'ha de fer el mateix tant si és una abstracció com si és una aplicació
 
+-- l_normalitza_a
 
+--          Normalitza un lambda-terme, retorna una tupla amb el nombre de passos necessàris per arribar a la forma normal
+--          i la forma normal del lambda-terme.
+-- Param 1: Lambda-terme sobre el que buscar la forma normal.
+-- Retorna: Tupla amb el primer valor com el nombre de passos a realitzar per arribar a la forma normal
+--          i el segon valor el lambda-terme en forma normal.
+normalitza_n :: LT -> (Integer, LT)
+normalitza_n x = iNormalitza_n x 0
 
--- 5 
-
--- 6 
-
--- 7
-
--- 8
-
--- 9
+--          Inmersió de la funció normalitza_n. Realitza la mateixa funció excepte que a aqueste se li passa un paràmetre extra
+--          per així comptar quantes passes (crides a la funció) s'han fet.
+-- Param 1: Lambda-terme sobre el que buscar la forma normal.
+-- Param 2: Nombre de passes que s'han realitzat fins al moment de cridar la funció.
+-- Retorna: El mateix que normalitza_n
+iNormalitza_n :: LT -> Integer -> (Integer, LT)
+iNormalitza_n x@(Va v) n = (n,x)
+iNormalitza_n x n = if esta_normal x then (n,x) else iNormalitza_n (redueix_un_n x) (n+1)
 
 
 ------------------------------------------------------------------
