@@ -18,8 +18,8 @@ instance Eq LT where
     (==) (Va x) (Va x') = x==x'
 
 
---          Funció que retorna una tupla amb les variables lliures i lligades del lambda-terme donat
--- Param 1: Lambda-terme a avaluar
+--          Funció que retorna una tupla amb les variables lliures i lligades del lambda-terme donat.
+-- Param 1: Lambda-terme a avaluar.
 -- Retorna: Tupla (<freeVars>,<boundVars>) amb dos llistes, la primera representant les variables lliures
 --          de <param 1> i la segona representant les variables lligades.
 freeAndBoundVars :: LT -> ([Var],[Var])
@@ -35,10 +35,10 @@ freeAndBoundVars (AP a b) = (
 
 
 --          Substitueix a un lambda-terme una variable lliure per el lambda-terme indicat sense realitzar 
---          caputra de variables
--- Param 1: Lambda-terme on realitzar la substitució
--- Param 2: Variable a substituir
--- Param 3: Nou lamda-terme substitut
+--          caputra de variables.
+-- Param 1: Lambda-terme on realitzar la substitució.
+-- Param 2: Variable a substituir.
+-- Param 3: Nou lamda-terme substitut.
 -- Retorna: Retorna el lambda-terme <param 1> on s'han substituit les instàncies lliures de 
 --          <param 2> per <param 3> sense realitzar captura.
 subst :: LT -> Var -> LT -> LT
@@ -48,11 +48,11 @@ subst (AP lt1 lt2) old_val new_val = (AP (iSubst lt1 old_val new_val []) (iSubst
 
 
 --          Funció d'inmersió de subst. Realitza el mateix però s'ha de passar un paràmetre addicional
---          indicant quines són les variables lligades en el moment de cridar a la funció
--- Param 1: Lambda-terme on realitzar la substitució
--- Param 2: Variable a substituir
--- Param 3: Nou lamda-terme substitut
--- Param 4: Llista de variables que estan lligades en el moment de cridar la funció
+--          indicant quines són les variables lligades en el moment de cridar a la funció.
+-- Param 1: Lambda-terme on realitzar la substitució.
+-- Param 2: Variable a substituir.
+-- Param 3: Nou lamda-terme substitut.
+-- Param 4: Llista de variables que estan lligades en el moment de cridar la funció.
 -- Retorna: Retorna el lambda-terme <param 1> on s'han substituit les instàncies lliures de 
 --          <param 2> per <param 3> sense realitzar captura.
 iSubst :: LT -> Var -> LT -> [Var] -> LT
@@ -67,20 +67,20 @@ iSubst x@(La v lt) old_val new_val bVars =
 iSubst (AP lt1 lt2) old_val new_val bVars = (AP (iSubst lt1 old_val new_val bVars) (iSubst lt2 old_val new_val bVars))
 
 
---          Indica si un lambda-terme està en forma normal o no
--- Param 1: El lambda-terme a comprovar
--- Retorna: Cert si està en forma normal, fals altrament
+--          Indica si un lambda-terme està en forma normal o no.
+-- Param 1: El lambda-terme a comprovar.
+-- Retorna: Cert si està en forma normal, fals altrament.
 esta_normal :: LT -> Bool
 esta_normal (Va v) = True
 esta_normal (La v lt) = esta_normal lt
-esta_normal (AP (La v lt) _) = False
+esta_normal (AP (La v lt) _) = False -- Si hi ha una aplicació on el LT esquerra és una abstracció, llavors ja no està en forma normal
 esta_normal (AP a b) = esta_normal a && esta_normal b 
 
 
 --          Funció que rep un lambda-terme que sigui un redex i el resol. 
---          Si el lambda-terme passat no és un redex, retorna el mateix lambda-terme
--- Param 1: Lambda-terme sobre el que realitzar la reducció
--- Retorna: El lambda-terme <param 1> amb la substitució feta, si no és un redex retorna el mateix lambda-terme
+--          Si el lambda-terme passat no és un redex, retorna el mateix lambda-terme.
+-- Param 1: Lambda-terme sobre el que realitzar la reducció.
+-- Retorna: El lambda-terme <param 1> amb la substitució feta, si no és un redex retorna el mateix lambda-terme.
 beta_redueix :: LT -> LT
 beta_redueix x@(Va v) = x
 beta_redueix x@(La v lt) = x
@@ -90,14 +90,26 @@ beta_redueix x@(AP lt1 lt2) = x
 
 --          Funció on es passa un lambda-terme i s'aplica la primera beta-reducció en ordre normal.
 --          Si el lambda-terme passat no té cap redex, retorna el mateix lambda-terme.
--- Param 1: Lambda-terme sobre el que realitzar la reducció
+-- Param 1: Lambda-terme sobre el que realitzar la reducció.
 -- Retorna: El lambda-terme <param 1> amb la primera beta-reducció en ordre normal feta, 
---          si no és un redex retorna el mateix lambda-terme
+--          si no és un redex retorna el mateix lambda-terme.
 redueix_un_n :: LT -> LT
 redueix_un_n x@(Va v) = x
-redueix_un_n (La v lt) = (La v (redueix_un_n lt))
+redueix_un_n x@(La v lt) = La v (redueix_un_n lt)
 redueix_un_n x@(AP (La v lt1) lt2) = beta_redueix x
-redueix_un_n (AP lt1 lt2) = (AP (redueix_un_n lt1) (redueix_un_n lt2))
+redueix_un_n x@(AP lt1 lt2) = AP (redueix_un_n lt1) (redueix_un_n lt2)
+
+
+--redueix_un_a
+
+--          Normalitza un lambda-terme, retorna la llista de passes fetes fins arribar a la forma normal.
+-- Param 1: Lambda-terme sobre el que buscar la forma normal.
+-- Retorna: Llista de lambda-termes, seqüència de reduccions, des del lambda-terme original <param 1> fins
+--          el lambda-terme en forma normal.
+l_normalitza_n :: LT -> [LT]
+l_normalitza_n x@(Va v) = [x]
+l_normalitza_n x = if esta_normal x then [x] else [x] ++ l_normalitza_n (redueix_un_n x) -- S'agrupen els dos casos, s'ha de fer el mateix tant si és una abstracció com si és una aplicació
+
 
 
 -- 5 
