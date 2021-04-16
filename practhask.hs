@@ -1,57 +1,111 @@
---import Data.Set
-import qualified Data.Set as Set
+-- 1
+import Data.List
+import Debug.Trace
 type Var = String
-data LT = LTVar Var | LTAbs Var LT | LTApl LT LT
+data LT  = Va Var | La Var LT | AP LT LT
+-- Llista de lletres de l'alfabet com a possibles noms de variables
+possible_vars = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
 
--- Derivació de show per a mostrar els lambda-termes de forma correcte
--- Exemple de lambda-terme = LTAbs "x1" (LTAbs "x2" (LTApl (LTVar "x1") (LTApl (LTVar "x2") (LTVar "x3"))))
--- El resultat de l'anterior és (\x1. (\x2. (x1 (x2 x3))))
---
--- Exemple de lambda-terme = LTAbs "x" (LTAbs "y" (LTAbs "z" (LTApl (LTApl (LTApl (LTVar "x") (LTVar "z")) (LTVar "z")) (LTApl (LTVar "y") (LTApl (LTVar "x") (LTVar "z"))))))
--- El retultat de l'anterior és (\x. (\y. (\z. (((x z) z) (y (x z))))))
---
--- Exemple de lambda-terme = LTApl (LTAbs "n" (LTAbs "f" (LTAbs "x" (LTApl (LTVar "f") (LTApl (LTApl (LTVar "n") (LTVar "f")) (LTVar "x")))))) (LTAbs "g" (LTAbs "y" (LTApl (LTVar "g") (LTVar "y"))))
--- El resultat de l'anterior és ((\n. (\f. (\x. (f ((n f) x))))) (\g. (\y. (g y))))
-instance Show LT where
-    show (LTVar x) = x
-    show (LTAbs x lt) = "(\\"++ x ++ ". " ++ show lt ++ ")"
-    show (LTApl lt1 lt2) = "(" ++ show lt1 ++ " " ++ show lt2 ++ ")"
+--"Show lambda terme"
 
--- Es subsitueix el primer string pel segon
---subst :: LT -> String -> String -> LT 
---subst (LTVar x) y z = if x == y then LTVar z else LTVar x
-
--- Funció per mirar si una variable apareix dins un lambda-terme
--- Exemple: varInLT (LTAbs "x" (LTVar "y")) "z" -> False
--- Exemple: varInLT (LTApl (LTVar "y") (LTAbs "z" (LTVar "x"))) "x" -> True
-varInLT :: LT -> Var -> Bool
-varInLT (LTVar x) y = x == y 
-varInLT (LTAbs x lt) y = if x == y then True else varInLT lt y
-varInLT (LTApl lt1 lt2) y = varInLT lt1 y || varInLT lt2 y
-
--- Funció per mirar quines variables estan lligades a un lambda-terme
-boundVars :: LT -> [Var]
-boundVars (LTVar x) = []
-boundVars (LTAbs x lt) = x:boundVars lt -- Si hi ha una abstraccio afegim la variable a la llista de variables lligades
-boundVars (LTApl lt1 lt2) = concat [boundVars lt1, boundVars lt2]
-
--- Funció per retornar totes les variables que hi ha en un lambda-terme
-allVars :: LT -> (Set.Set Var)
-allVars (LTVar x) = Set.fromList [x]
-allVars (LTAbs x lt) = Set.insert x (allVars lt)
-allVars (LTApl lt1 lt2) = Set.union (allVars lt1) (allVars lt2)
+instance Show LT where 
+    show (Va x) = x
+    show (La v lt) = "(\\"++v++". "++ show lt ++ ")"
+    show (AP lt lv) = "("++ show lt++" "++ show lv ++ ")"
 
 
--- Estoy en ello
-freeVarsX :: LT -> (Set.Set Var)
-freeVarsX (LTVar x) = Set.fromList [x] -- Si nomes hi ha una variable, llavors és lliure
-freeVarsX (LTAbs x lt) = Set.difference (allVars lt) (Set.fromList (x:(boundVars lt)))
-freeVarsX (LTApl lt1 lt2) = Set.union (freeVarsX lt1) (freeVarsX lt2)
+instance Eq LT where 
+    (==) (Va x) (Va x') = x==x'
 
-freeAndBoundVars :: LT -> ([Var], [Var])
-freeAndBoundVars (LTAbs x lt) = (iFreeVars lt [x], [])
 
--- Lambda-terme i llista de variables lligades
-iFreeVars :: LT -> [Var] -> [Var]
-iFreeVars (LTVar x) xs = if elem x xs then [] else [x]
-iFreeVars (LTAbs x lt) xs = if elem x xs then iFreeVars lt xs else iFreeVars lt (x:xs)
+--          Funció que retorna una tupla amb les variables lliures i lligades del lambda-terme donat
+-- Param 1: Lambda-terme a avaluar
+-- Retorna: Tupla (<freeVars>,<boundVars>) amb dos llistes, la primera representant les variables lliures
+--          de <param 1> i la segona representant les variables lligades.
+freeAndBoundVars :: LT -> ([Var],[Var])
+freeAndBoundVars (Va v) = ([v],[]) -- La variable s'afegeix a la llista de lliures
+freeAndBoundVars (La v lt) = (
+    delete v (fst (freeAndBoundVars lt)), -- S'elimina <v> de la llista de variables lliures perquè ara estarà lligada
+    if v `elem` fst (freeAndBoundVars lt) -- Si <v> està a la llista de variables lliures de <lt>
+    then (snd (freeAndBoundVars lt))++[v] -- Llavors s'afegeix a la llista de lligades
+    else snd (freeAndBoundVars lt)) -- Sino es torna a cridar a la funció amb <lt>
+freeAndBoundVars (AP a b) = (
+    fst (freeAndBoundVars a) `union` fst (freeAndBoundVars b),
+    snd (freeAndBoundVars a) `union` snd (freeAndBoundVars b)) -- S'uneixen els resultats d'aplicar la funció als dos lambda-termes
+
+
+--          Substitueix a un lambda-terme una variable lliure per el lambda-terme indicat sense realitzar 
+--          caputra de variables
+-- Param 1: Lambda-terme on realitzar la substitució
+-- Param 2: Variable a substituir
+-- Param 3: Nou lamda-terme substitut
+-- Retorna: Retorna el lambda-terme <param 1> on s'han substituit les instàncies lliures de 
+--          <param 2> per <param 3> sense realitzar captura.
+subst :: LT -> Var -> LT -> LT
+subst x@(Va v) old_val new_val = iSubst x old_val new_val []
+subst x@(La v lt) old_val new_val = iSubst x old_val new_val [v] -- Es crida a iSubst afegint la variable v com a lligada
+subst (AP lt1 lt2) old_val new_val = (AP (iSubst lt1 old_val new_val []) (iSubst lt2 old_val new_val []))
+
+
+--          Funció d'inmersió de subst. Realitza el mateix però s'ha de passar un paràmetre addicional
+--          indicant quines són les variables lligades en el moment de cridar a la funció
+-- Param 1: Lambda-terme on realitzar la substitució
+-- Param 2: Variable a substituir
+-- Param 3: Nou lamda-terme substitut
+-- Param 4: Llista de variables que estan lligades en el moment de cridar la funció
+-- Retorna: Retorna el lambda-terme <param 1> on s'han substituit les instàncies lliures de 
+--          <param 2> per <param 3> sense realitzar captura.
+iSubst :: LT -> Var -> LT -> [Var] -> LT
+iSubst (Va v) old_val new_val bVars = if (v == old_val) && not (elem v bVars) then new_val else Va v -- Si és la variable que es vol canviar i no està lligada, llavors substituir per el nou valor
+iSubst x@(La v lt) old_val new_val bVars = 
+    if elem v (fst (freeAndBoundVars new_val)) -- Si la variable que la abstracció està lligant està dins de les variables lliures del nou lamda-terme
+    then iSubst (La fnbv (subst lt v (Va fnbv))) old_val new_val nbVars -- Llavors s'ha defer una alpha-conversió canvinat les <v> per un altre nom per evitar la captura
+    else (La v (iSubst lt old_val new_val (v:bVars))) -- Sinó es pot cridar altre cop a iSubst amb el <lt> i afegint <v> a les variables lligades
+    where
+        fnbv = firstNonBoundVar bVars -- Primera variable lliure
+        nbVars = replaceFirst v fnbv bVars -- Les noves variables lligades canviant la que estava abans lligada per la nova
+iSubst (AP lt1 lt2) old_val new_val bVars = (AP (iSubst lt1 old_val new_val bVars) (iSubst lt2 old_val new_val bVars))
+
+
+--          Indica si un lambda-terme està en forma normal o no
+-- Param 1: El lambda-terme a comprovar
+-- Retorna: Cert si està en forma normal, fals altrament
+esta_normal :: LT -> Bool
+esta_normal (Va v) = True
+esta_normal (La v lt) = esta_normal lt
+esta_normal (AP (La v lt) _) = False
+esta_normal (AP a b) = esta_normal a && esta_normal b 
+
+-- 4 
+
+-- 5 
+
+-- 6 
+
+-- 7
+
+-- 8
+
+-- 9
+
+
+------------------------------------------------------------------
+-- Altres funcions necessàries per al funcionament del programa --
+------------------------------------------------------------------
+
+--          De la llista de possibles noms de variables, retorna la primera que no estigui lligada
+-- Param 1: Llista de variables lligades
+-- Retorna: Primera variable que estigui lliure, és a dir, que no estigui a la llista passada
+firstNonBoundVar :: [Var] -> Var
+firstNonBoundVar bVars = (possible_vars \\ bVars)!!0 -- Es fa la diferència entre les llistes i s'agafa el primer element
+
+
+--          Reemplaça la primera instància de <param 1> per <param 2> a la llista donada mirant d'esquerra a dreta.
+-- Param 1: Paràmetre a buscar i substituir
+-- Param 2: Nou paràmetre substitut de <param 1>
+-- Param 3: Llista on realitzar la cerca i substitució
+-- Retorna: La llista original però la primera instància de <param 1> substituida per <param 2>
+replaceFirst :: (Eq a) => a -> a -> [a] -> [a]
+replaceFirst _ _ [] = []
+replaceFirst a x (b:bc) | a == b    = x:bc 
+                     | otherwise = b : replaceFirst a x bc
