@@ -100,9 +100,22 @@ redueix_un_n x@(AP (La v lt1) lt2) = beta_redueix x
 redueix_un_n x@(AP lt1 lt2) = AP (redueix_un_n lt1) (redueix_un_n lt2)
 
 
---redueix_un_a
+--redueix_un_a 
+--          Funció on es passa un lambda-terme i s'aplica la primera beta-reducció en ordre aplicatiu.
+--          Si el lambda-terme passat no té cap redex, retorna el mateix lambda-terme.
+-- Param 1: Lambda-terme sobre el que realitzar la reducció.
+-- Retorna: El lambda-terme <param 1> amb la primera beta-reducció en ordre aplicatiu feta, 
+--          si no és un redex retorna el mateix lambda-terme.
 
---          Normalitza un lambda-terme, retorna la llista de passes fetes fins arribar a la forma normal.
+redueix_un_a::LT->LT
+redueix_un_a x@(Va v) = x
+redueix_un_a x@(La v lt) | not (esta_normal lt) = La v (redueix_un_a lt)
+                         | otherwise = x
+redueix_un_a x@(AP y@(La v lt1) lt2) = redueix_un_n $  (AP  (if not(esta_normal y) then (redueix_un_a y) else y) (if not(esta_normal lt2) then (redueix_un_a lt2) else lt2))
+redueix_un_a x@(AP lt1 lt2) = AP (redueix_un_n lt1) (redueix_un_n lt2)
+
+
+--          Normalitza un lambda-terme, retorna la llista de passes fetes fins arribar a la forma normal seguin l'ordre normal.
 -- Param 1: Lambda-terme sobre el que buscar la forma normal.
 -- Retorna: Llista de lambda-termes, seqüència de reduccions, des del lambda-terme original <param 1> fins
 --          el lambda-terme en forma normal.
@@ -110,24 +123,33 @@ l_normalitza_n :: LT -> [LT]
 l_normalitza_n x@(Va v) = [x]
 l_normalitza_n x = if esta_normal x then [x] else [x] ++ l_normalitza_n (redueix_un_n x) -- S'agrupen els dos casos, s'ha de fer el mateix tant si és una abstracció com si és una aplicació
 
--- l_normalitza_a
 
---          Normalitza un lambda-terme, retorna una tupla amb el nombre de passos necessàris per arribar a la forma normal
+--          Normalitza un lambda-terme, retorna la llista de passes fetes fins arribar a la forma normal seguin l'ordre aplicatiu.
+-- Param 1: Lambda-terme sobre el que buscar la forma normal.
+-- Retorna: Llista de lambda-termes, seqüència de reduccions, des del lambda-terme original <param 1> fins
+--          el lambda-terme en forma normal.
+l_normalitza_a :: LT -> [LT]
+l_normalitza_a ap@(Va a) = [ap]
+l_normalitza_a x = if esta_normal x then [x] else [x] ++ l_normalitza_a (redueix_un_a x)
+
+
+--          Normalitza un lambda-terme seguin l'ordre normal, retorna una tupla amb el nombre de passos necessàris per arribar a la forma normal
 --          i la forma normal del lambda-terme.
 -- Param 1: Lambda-terme sobre el que buscar la forma normal.
 -- Retorna: Tupla amb el primer valor com el nombre de passos a realitzar per arribar a la forma normal
 --          i el segon valor el lambda-terme en forma normal.
 normalitza_n :: LT -> (Integer, LT)
-normalitza_n x = iNormalitza_n x 0
+normalitza_n x = iNormalitza redueix_un_n x 0
 
---          Inmersió de la funció normalitza_n. Realitza la mateixa funció excepte que a aqueste se li passa un paràmetre extra
---          per així comptar quantes passes (crides a la funció) s'han fet.
+
+--          Normalitza un lambda-terme seguin l'ordre aplicatiu, retorna una tupla amb el nombre de passos necessàris per arribar a la forma normal
+--          i la forma normal del lambda-terme.
 -- Param 1: Lambda-terme sobre el que buscar la forma normal.
--- Param 2: Nombre de passes que s'han realitzat fins al moment de cridar la funció.
--- Retorna: El mateix que normalitza_n
-iNormalitza_n :: LT -> Integer -> (Integer, LT)
-iNormalitza_n x@(Va v) n = (n,x)
-iNormalitza_n x n = if esta_normal x then (n,x) else iNormalitza_n (redueix_un_n x) (n+1)
+-- Retorna: Tupla amb el primer valor com el nombre de passos a realitzar per arribar a la forma normal
+--          i el segon valor el lambda-terme en forma normal.
+normalitza_a :: LT -> (Integer, LT)
+normalitza_a x = iNormalitza redueix_un_a x 0
+
 
 
 ------------------------------------------------------------------
@@ -150,3 +172,13 @@ replaceFirst :: (Eq a) => a -> a -> [a] -> [a]
 replaceFirst _ _ [] = []
 replaceFirst a x (b:bc) | a == b    = x:bc 
                      | otherwise = b : replaceFirst a x bc
+
+
+--          Inmersió de la funció normalitza_n. Realitza la mateixa funció excepte que a aqueste se li passa un paràmetre extra
+--          per així comptar quantes passes (crides a la funció) s'han fet.
+-- Param 1: Lambda-terme sobre el que buscar la forma normal.
+-- Param 2: Nombre de passes que s'han realitzat fins al moment de cridar la funció.
+-- Retorna: El mateix que normalitza_n
+iNormalitza :: (LT->LT)->LT -> Integer -> (Integer, LT)
+iNormalitza _ x@(Va v) n = (n,x)
+iNormalitza f x n = if esta_normal x then (n,x) else iNormalitza f (f x) (n+1)
