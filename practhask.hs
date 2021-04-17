@@ -1,57 +1,127 @@
---import Data.Set
-import qualified Data.Set as Set
+-- 1
+import Data.List
 type Var = String
-data LT = LTVar Var | LTAbs Var LT | LTApl LT LT
+data LT  = Va Var | La Var LT | AP LT LT
 
--- Derivació de show per a mostrar els lambda-termes de forma correcte
--- Exemple de lambda-terme = LTAbs "x1" (LTAbs "x2" (LTApl (LTVar "x1") (LTApl (LTVar "x2") (LTVar "x3"))))
--- El resultat de l'anterior és (\x1. (\x2. (x1 (x2 x3))))
---
--- Exemple de lambda-terme = LTAbs "x" (LTAbs "y" (LTAbs "z" (LTApl (LTApl (LTApl (LTVar "x") (LTVar "z")) (LTVar "z")) (LTApl (LTVar "y") (LTApl (LTVar "x") (LTVar "z"))))))
--- El retultat de l'anterior és (\x. (\y. (\z. (((x z) z) (y (x z))))))
---
--- Exemple de lambda-terme = LTApl (LTAbs "n" (LTAbs "f" (LTAbs "x" (LTApl (LTVar "f") (LTApl (LTApl (LTVar "n") (LTVar "f")) (LTVar "x")))))) (LTAbs "g" (LTAbs "y" (LTApl (LTVar "g") (LTVar "y"))))
--- El resultat de l'anterior és ((\n. (\f. (\x. (f ((n f) x))))) (\g. (\y. (g y))))
-instance Show LT where
-    show (LTVar x) = x
-    show (LTAbs x lt) = "(\\"++ x ++ ". " ++ show lt ++ ")"
-    show (LTApl lt1 lt2) = "(" ++ show lt1 ++ " " ++ show lt2 ++ ")"
-
--- Es subsitueix el primer string pel segon
---subst :: LT -> String -> String -> LT 
---subst (LTVar x) y z = if x == y then LTVar z else LTVar x
-
--- Funció per mirar si una variable apareix dins un lambda-terme
--- Exemple: varInLT (LTAbs "x" (LTVar "y")) "z" -> False
--- Exemple: varInLT (LTApl (LTVar "y") (LTAbs "z" (LTVar "x"))) "x" -> True
-varInLT :: LT -> Var -> Bool
-varInLT (LTVar x) y = x == y 
-varInLT (LTAbs x lt) y = if x == y then True else varInLT lt y
-varInLT (LTApl lt1 lt2) y = varInLT lt1 y || varInLT lt2 y
-
--- Funció per mirar quines variables estan lligades a un lambda-terme
-boundVars :: LT -> [Var]
-boundVars (LTVar x) = []
-boundVars (LTAbs x lt) = x:boundVars lt -- Si hi ha una abstraccio afegim la variable a la llista de variables lligades
-boundVars (LTApl lt1 lt2) = concat [boundVars lt1, boundVars lt2]
-
--- Funció per retornar totes les variables que hi ha en un lambda-terme
-allVars :: LT -> (Set.Set Var)
-allVars (LTVar x) = Set.fromList [x]
-allVars (LTAbs x lt) = Set.insert x (allVars lt)
-allVars (LTApl lt1 lt2) = Set.union (allVars lt1) (allVars lt2)
+--"Show lambda terme"
+instance Show LT where 
+    show (Va x) = x
+    show (La v lt) = "(\\"++v++"."++ show lt ++ ")"
+    show (AP lt lv) = "("++ show lt++" "++ show lv ++ ")"
 
 
--- Estoy en ello
-freeVarsX :: LT -> (Set.Set Var)
-freeVarsX (LTVar x) = Set.fromList [x] -- Si nomes hi ha una variable, llavors és lliure
-freeVarsX (LTAbs x lt) = Set.difference (allVars lt) (Set.fromList (x:(boundVars lt)))
-freeVarsX (LTApl lt1 lt2) = Set.union (freeVarsX lt1) (freeVarsX lt2)
+instance Eq LT where 
+    (==) (Va x) (Va x') = x==x'
 
-freeAndBoundVars :: LT -> ([Var], [Var])
-freeAndBoundVars (LTAbs x lt) = (iFreeVars lt [x], [])
+-- working ---
+freeVars :: LT -> [Var]
+freeVars (Va v) = ([v])
+freeVars (AP a b) = freeVars a `union` freeVars b
+freeVars (La v lt) = delete v $ freeVars lt
 
--- Lambda-terme i llista de variables lligades
-iFreeVars :: LT -> [Var] -> [Var]
-iFreeVars (LTVar x) xs = if elem x xs then [] else [x]
-iFreeVars (LTAbs x lt) xs = if elem x xs then iFreeVars lt xs else iFreeVars lt (x:xs)
+-- freeAndBoundVars (La "y" (AP (Va "y") (La "x" (AP (Va "x") (Va "z")))))
+freeAndBoundVars :: LT -> ([Var],[Var])
+freeAndBoundVars (Va v) = ([v],[])
+freeAndBoundVars (AP a b) = (fst (freeAndBoundVars a) `union`  fst (freeAndBoundVars b),snd (freeAndBoundVars a) `union` snd (freeAndBoundVars b))
+freeAndBoundVars (La v lt) = (delete v $ fst (freeAndBoundVars lt),if v `elem` fst (freeAndBoundVars lt) then v:snd (freeAndBoundVars lt) else snd (freeAndBoundVars lt))
+
+
+fresh :: Var ->LT
+fresh x = Va x 
+
+-- PRE : Un lamba Terme de tipus LT
+-- POST : Retorna una llista de totes les variables de un lamba term ( lliures y lligades)
+variables :: LT->[Var]
+variables (Va e) = [e]
+variables (AP a b) = variables a `union` variables b
+variables (La x lt) = variables lt `union` [x]
+
+
+--subs_i (La "x" (AP (Va "x") (Va "x"))) "x" (AP (Va "y") (Va "z"))
+--subs_i :: LT->Var->LT->LT
+--subs_i var@(Va v) x e = if v==x then e else var
+--subs_i ap@(AP a b) x e = AP (subs_i a x e) (subs_i b x e)   
+--subs_i la@(La v lt) x e | x == v = subs_i lt x e
+--                        | otherwise = La v (subs_i lt x e)
+
+-- SUBSTITUCIO ALFA                        
+subs_a :: LT->Var->LT->LT
+subs_a var@(Va v) x e = if v==x then e else var
+subs_a ap@(AP a b) x e = AP (subs_a a x e) (subs_a b x e)   
+subs_a la@(La v lt) x e | x == v = la
+                        | otherwise = La v (subs_a lt x e)
+
+
+charToString :: [Char] -> [Var]
+charToString [] =[]
+charToString (c:cs) = [c]:charToString cs
+
+-- subs (La "x" (AP (Va "x") (La "x" (Va "x")))) (AP (Va "y") (Va "z"))
+
+-- WORKING PARTIALLY WITH --\\ alfa (La "x" (Va "x")) ["x"] --> RESULT EQUAL --> (\t.t) --
+alfa::LT ->[Var]->LT
+alfa (AP a b) vars = AP (alfa a vars) (alfa b vars)
+alfa (La x lt) vars | x `elem` vars = La t $ (alfa e' vars)
+                    | otherwise = La x  $ (alfa lt vars)
+                    where
+                     var = (variables lt)
+                     v = charToString ['a'..'z']
+                     t = last [ x | x <- v ,let lis = var `union` vars ,not (x`elem` lis)]
+                     e' = subs_a lt x (fresh t) 
+alfa e _ = e
+
+
+-- PRE : UN REDEX 
+-- POST : RETORNA UN ALTRE LAMBDA TERME DESPRES DE FER LA SUBSTITUCIO
+
+subs::LT->LT->LT
+subs var@(Va x) _ = error "No es un redex"
+subs (La x lt) v = subs_a lt' x v
+      where
+          lt'= alfa lt (freeVars v)
+          
+
+                                
+
+--subs var@(Va x) _ = error "No es un redex"
+--subs (AP a b) e =  AP (subs a b) e 
+--subs exp@(La x lt) e = subs_i exp x e 
+
+
+-- 3 -- 
+
+esta_normal::LT->Bool
+esta_normal (Va v) = True
+esta_normal (La v lt) = case lt of
+    (La v t) -> esta_normal t
+    (AP a b) -> esta_normal a && esta_normal b
+    (Va a) -> False
+esta_normal (AP a b) =  dreta && esquerra
+    where 
+    dreta = case a of
+        (La v t) -> esta_normal t
+        (AP c c') -> esta_normal c && esta_normal c'
+        (Va e) -> True
+    esquerra = case b of
+        (La v t) -> esta_normal t
+        (AP c c') -> esta_normal c && esta_normal c'
+        (Va e) -> True
+
+-- 3 
+
+
+
+
+-- 4 
+
+-- 5 
+
+-- 6 
+
+-- 7
+
+-- 8
+
+-- 9
+
+-- 10
