@@ -1,92 +1,339 @@
-(\x. (\y. (\z. (((x z) z) (y (x z))))))
+1.1 (\x. (\y. (\z. (((x z) z) (y (x z)))))) -> SI forma normal
 
 (x z)
-LTApl (LTVar "x") (LTVar "z")
+AP (Va "x") (Va "z")
 
 ((x z) z)
-LTApl (LTApl (LTVar "x") (LTVar "z")) (LTVar "z")
+AP (AP (Va "x") (Va "z")) (Va "z")
 
 (x z)
-LTApl (LTVar "x") (LTVar "z")
+AP (Va "x") (Va "z")
 
 (y (x z))
-LTApl (LTVar "y") (LTApl (LTVar "x") (LTVar "z"))
+AP (Va "y") (AP (Va "x") (Va "z"))
 
 (((x z) z) (y (x z)))
-LTApl (LTApl (LTApl (LTVar "x") (LTVar "z")) (LTVar "z")) (LTApl (LTVar "y") (LTApl (LTVar "x") (LTVar "z")))
+AP (AP (AP (Va "x") (Va "z")) (Va "z")) (AP (Va "y") (AP (Va "x") (Va "z")))
 
 (\z. (((x z) z) (y (x z))))
-LTAbs "z" (LTApl (LTApl (LTApl (LTVar "x") (LTVar "z")) (LTVar "z")) (LTApl (LTVar "y") (LTApl (LTVar "x") (LTVar "z"))))
+La "z" (AP (AP (AP (Va "x") (Va "z")) (Va "z")) (AP (Va "y") (AP (Va "x") (Va "z"))))
 
 (\y. (\z. (((x z) z) (y (x z)))))
-LTAbs "y" (LTAbs "z" (LTApl (LTApl (LTApl (LTVar "x") (LTVar "z")) (LTVar "z")) (LTApl (LTVar "y") (LTApl (LTVar "x") (LTVar "z")))))
+La "y" (La "z" (AP (AP (AP (Va "x") (Va "z")) (Va "z")) (AP (Va "y") (AP (Va "x") (Va "z")))))
 
 (\x. (\y. (\z. (((x z) z) (y (x z))))))
-LTAbs "x" (LTAbs "y" (LTAbs "z" (LTApl (LTApl (LTApl (LTVar "x") (LTVar "z")) (LTVar "z")) (LTApl (LTVar "y") (LTApl (LTVar "x") (LTVar "z"))))))
+La "x" (La "y" (La "z" (AP (AP (AP (Va "x") (Va "z")) (Va "z")) (AP (Va "y") (AP (Va "x") (Va "z"))))))
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------
-
-((\n. (\f. (\x. (f ((n f) x))))) (\g. (\y. (g y))))
+1.2 ((\n. (\f. (\x. (f ((n f) x))))) (\g. (\y. (g y)))) -> NO forma normal
 
 (n f)
-LTApl (LTVar "n") (LTVar "f")
+AP (Va "n") (Va "f")
 
 ((n f) x)
-LTApl (LTApl (LTVar "n") (LTVar "f")) (LTVar "x")
+AP (AP (Va "n") (Va "f")) (Va "x")
 
 (f ((n f) x))
-LTApl (LTVar "f") (LTApl (LTApl (LTVar "n") (LTVar "f")) (LTVar "x"))
+AP (Va "f") (AP (AP (Va "n") (Va "f")) (Va "x"))
 
 (\x. (f ((n f) x)))
-LTAbs "x" (LTApl (LTVar "f") (LTApl (LTApl (LTVar "n") (LTVar "f")) (LTVar "x")))
+La "x" (AP (Va "f") (AP (AP (Va "n") (Va "f")) (Va "x")))
 
 (\f. (\x. (f ((n f) x))))
-LTAbs "f" (LTAbs "x" (LTApl (LTVar "f") (LTApl (LTApl (LTVar "n") (LTVar "f")) (LTVar "x"))))
+La "f" (La "x" (AP (Va "f") (AP (AP (Va "n") (Va "f")) (Va "x"))))
 
 (\n. (\f. (\x. (f ((n f) x)))))
-LTAbs "n" (LTAbs "f" (LTAbs "x" (LTApl (LTVar "f") (LTApl (LTApl (LTVar "n") (LTVar "f")) (LTVar "x")))))
+La "n" (La "f" (La "x" (AP (Va "f") (AP (AP (Va "n") (Va "f")) (Va "x")))))
 
 (g y)
-LTApl (LTVar "g") (LTVar "y")
+AP (Va "g") (Va "y")
 
 (\y. (g y))
-LTAbs "y" (LTApl (LTVar "g") (LTVar "y"))
+La "y" (AP (Va "g") (Va "y"))
 
 (\g. (\y. (g y)))
-LTAbs "g" (LTAbs "y" (LTApl (LTVar "g") (LTVar "y")))
+La "g" (La "y" (AP (Va "g") (Va "y")))
 
 ((\n. (\f. (\x. (f ((n f) x))))) (\g. (\y. (g y))))
-LTApl (LTAbs "n" (LTAbs "f" (LTAbs "x" (LTApl (LTVar "f") (LTApl (LTApl (LTVar "n") (LTVar "f")) (LTVar "x")))))) (LTAbs "g" (LTAbs "y" (LTApl (LTVar "g") (LTVar "y"))))
+AP (La "n" (La "f" (La "x" (AP (Va "f") (AP (AP (Va "n") (Va "f")) (Va "x")))))) (La "g" (La "y" (AP (Va "g") (Va "y"))))
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------
-((\x. (x y)) (\z. w (\w. (((w z) y) x))))
+((\x. (x y)) (\z. w (\w. (((w z) y) x)))) -> NO forma normal
 
 (w z)
-LTApl (LTVar "w") (LTVar "z")
+AP (Va "w") (Va "z")
 
 ((w z) y)
-LTApl (LTApl (LTVar "w") (LTVar "z")) (LTVar "y")
+AP (AP (Va "w") (Va "z")) (Va "y")
 
 (((w z) y) x)
-LTApl (LTApl (LTApl (LTVar "w") (LTVar "z")) (LTVar "y")) (LTVar "x")
+AP (AP (AP (Va "w") (Va "z")) (Va "y")) (Va "x")
 
 (\w. (((w z) y) x))
-LTAbs "w" (LTApl (LTApl (LTApl (LTVar "w") (LTVar "z")) (LTVar "y")) (LTVar "x"))
+La "w" (AP (AP (AP (Va "w") (Va "z")) (Va "y")) (Va "x"))
 
 w (\w. (((w z) y) x))
-LTApl (LTVar "w") (LTAbs "w" (LTApl (LTApl (LTApl (LTVar "w") (LTVar "z")) (LTVar "y")) (LTVar "x")))
+AP (Va "w") (La "w" (AP (AP (AP (Va "w") (Va "z")) (Va "y")) (Va "x")))
 
 (\z. w (\w. (((w z) y) x)))
-LTAbs "z" (LTApl (LTVar "w") (LTAbs "w" (LTApl (LTApl (LTApl (LTVar "w") (LTVar "z")) (LTVar "y")) (LTVar "x"))))
+La "z" (AP (Va "w") (La "w" (AP (AP (AP (Va "w") (Va "z")) (Va "y")) (Va "x"))))
 
 (x y)
-LTApl (LTVar "x") (LTVar "y)
+AP (Va "x") (Va "y")
 
 (\x. (x y))
-LTAbs "x" (LTApl (LTVar "x") (LTVar "y))
+La "x" (AP (Va "x") (Va "y"))
 
-LTApl (LTAbs "x" (LTApl (LTVar "x") (LTVar "y"))) (LTAbs "z" (LTApl (LTVar "w") (LTAbs "w" (LTApl (LTApl (LTApl (LTVar "w") (LTVar "z")) (LTVar "y")) (LTVar "x")))))
+((\x. (x y)) (\z. w (\w. (((w z) y) x))))
+AP (La "x" (AP (Va "x") (Va "y"))) (La "z" (AP (Va "w") (La "w" (AP (AP (AP (Va "w") (Va "z")) (Va "y")) (Va "x")))))
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+8.1 (λx. (λy. ((λf. (y ((f y) x))) (λx. (λy. x))))) -> NO forma normal
+
+((f y) x)
+AP (AP (Va "f") (Va "y")) (Va "x")
+
+(y ((f y) x))
+AP (Va "y") (AP (AP (Va "f") (Va "y")) (Va "x"))
+
+(λf. (y ((f y) x)))
+La "f" (AP (Va "y") (AP (AP (Va "f") (Va "y")) (Va "x")))
+
+(λy. x)
+La "y" (Va "x")
+
+(λx. (λy. x) )
+La "x" (La "y" (Va "x"))
+
+((λf. (y ((f y) x))) (λx. (λy. x)))
+AP (La "f" (AP (Va "y") (AP (AP (Va "f") (Va "y")) (Va "x")))) (La "x" (La "y" (Va "x")))
+
+(λy. ((λf. (y ((f y) x))) (λx. (λy. x))))
+La "y" (AP (La "f" (AP (Va "y") (AP (AP (Va "f") (Va "y")) (Va "x")))) (La "x" (La "y" (Va "x"))))
+
+(λx. (λy. ((λf. (y ((f y) x))) (λx. (λy. x)))))
+La "x" (La "y" (AP (La "f" (AP (Va "y") (AP (AP (Va "f") (Va "y")) (Va "x")))) (La "x" (La "y" (Va "x")))))
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+8.2 λx. (λz. (λx. ((((λx. (λy. (x y))) x) x) z))) -> NO forma normal
+
+(x y)
+AP (Va "x") (Va "y")
+
+(λy. (x y))
+La "y" (AP (Va "x") (Va "y"))
+
+(λx. (λy. (x y)))
+La "x" (La "y" (AP (Va "x") (Va "y")))
+
+((λx. (λy. (x y))) x)
+AP (La "x" (La "y" (AP (Va "x") (Va "y")))) (Va "x")
+
+(((λx. (λy. (x y))) x) x)
+AP (AP (La "x" (La "y" (AP (Va "x") (Va "y")))) (Va "x")) (Va "x")
+
+((((λx. (λy. (x y))) x) x) z)
+AP (AP (AP (La "x" (La "y" (AP (Va "x") (Va "y")))) (Va "x")) (Va "x")) (Va "z")
+
+(λx. ((((λx. (λy. (x y))) x) x) z))
+La "x" (AP (AP (AP (La "x" (La "y" (AP (Va "x") (Va "y")))) (Va "x")) (Va "x")) (Va "z"))
+
+(λz. (λx. ((((λx. (λy. (x y))) x) x) z)))
+La "z" (La "x" (AP (AP (AP (La "x" (La "y" (AP (Va "x") (Va "y")))) (Va "x")) (Va "x")) (Va "z")))
+
+λx. (λz. (λx. ((((λx. (λy. (x y))) x) x) z)))
+La "x" (La "z" (La "x" (AP (AP (AP (La "x" (La "y" (AP (Va "x") (Va "y")))) (Va "x")) (Va "x")) (Va "z"))))
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+4.1 (λx. (λy. ((f x) y))) -> SI forma normal
+
+(f x)
+AP (Va "f") (Va "x")
+
+((f x) y)
+AP (AP (Va "f") (Va "x")) (Va "y")
+
+(λy. ((f x) y))
+La "y" (AP (AP (Va "f") (Va "x")) (Va "y"))
+
+(λx. (λy. ((f x) y)))
+La "x" (La "y" (AP (AP (Va "f") (Va "x")) (Va "y")))
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+4.2 ((λx. (f x)) (λf. (f x))) -> NO forma normal
+
+(f x)
+AP (Va "f") (Va "x")
+
+(λx. (f x))
+La "x" (AP (Va "f") (Va "x"))
+
+(λf. (f x))
+La "f" (AP (Va "f") (Va "x"))
+
+((λx. (f x)) (λf. (f x)))
+AP (La "x" (AP (Va "f") (Va "x"))) (La "f" (AP (Va "f") (Va "x")))
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+4.4 (λt. (λy. ((f x) y))) -> SI forma normal
+
+(f x)
+AP (Va "f") (Va "x")
+
+((f x) y)
+AP (AP (Va "f") (Va "x")) (Va "y")
+
+(λy. ((f x) y))
+La "y" (AP (AP (Va "f") (Va "x")) (Va "y"))
+
+(λx. (λy. ((f x) y)))
+La "t" (La "y" (AP (AP (Va "f") (Va "x")) (Va "y")))
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+3.2 ((λx. (x y)) (λz. (w (λw. (((w z) y) x))))) -> NO forma normal
+
+(w z)
+AP (Va "w") (Va "z")
+
+((w z) y)
+AP (AP (Va "w") (Va "z")) (Va "y")
+
+(((w z) y) x)
+AP (AP (AP (Va "w") (Va "z")) (Va "y")) (Va "x")
+
+(λw. (((w z) y) x))
+La "w" (AP (AP (AP (Va "w") (Va "z")) (Va "y")) (Va "x"))
+
+(w (λw. (((w z) y) x)))
+AP (Va "w") (La "w" (AP (AP (AP (Va "w") (Va "z")) (Va "y")) (Va "x")))
+
+(λz. (w (λw. (((w z) y) x))))
+La "z" (AP (Va "w") (La "w" (AP (AP (AP (Va "w") (Va "z")) (Va "y")) (Va "x"))))
+
+(λx. (x y)
+La "x" (AP (Va "x") (Va "y"))
+
+((λx. (x y)) (λz. (w (λw. (((w z) y) x)))))
+AP (La "x" (AP (Va "x") (Va "y"))) (La "z" (AP (Va "w") (La "w" (AP (AP (AP (Va "w") (Va "z")) (Va "y")) (Va "x")))))
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+(λz.z) (λq.q q) (λs.s a)
+(((λz.z) (λq.(q q))) (λs.(s a))) -> NO forma normal
+
+(λz.z)
+La "z" (Va "z")
+
+(λq.(q q))
+La "q" (AP (Va "q") (Va "q"))
+
+(λs.(s a))
+La "s" (AP (Va "s") (Va "a"))
+
+((λz.z) (λq.(q q)))
+AP (La "z" (Va "z")) (La "q" (AP (Va "q") (Va "q")))
+
+(((λz.z) (λq.(q q))) (λs.(s a)))
+AP (AP (La "z" (Va "z")) (La "q" (AP (Va "q") (Va "q")))) (La "s" (AP (Va "s") (Va "a")))
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+(λz.z) (λz.z z) (λz.z q)
+(((λz.z) (λz.(z z))) (λz.(z q))) -> NO forma normal
+
+(λz.z)
+La "z" (Va "z")
+
+(λz.(z z))
+La "z" (AP (Va "z") (Va "z"))
+
+(λz.(z q))
+La "z" (AP (Va "z") (Va "q"))
+
+((λz.z) (λz.(z z)))
+AP (La "z" (Va "z")) (La "z" (AP (Va "z") (Va "z")))
+
+(((λz.z) (λz.(z z))) (λz.(z q)))
+AP (AP (La "z" (Va "z")) (La "z" (AP (Va "z") (Va "z")))) (La "z" (AP (Va "z") (Va "q")))
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+(λs.λq.s q q) (λa.a) b
+(((λs.(λq.((s q) q))) (λa.a)) b) -> NO forma normal
+
+(s q)
+AP (Va "s") (Va "q")
+
+((s q) q)
+AP (AP (Va "s") (Va "q")) (Va "q")
+
+(λq.((s q) q))
+La "q" (AP (AP (Va "s") (Va "q")) (Va "q"))
+
+(λs.(λq.((s q) q)))
+La "s" (La "q" (AP (AP (Va "s") (Va "q")) (Va "q")))
+
+(λa.a)
+La "a" (Va "a")
+
+((λs.(λq.((s q) q))) (λa.a))
+AP (La "s" (La "q" (AP (AP (Va "s") (Va "q")) (Va "q")))) (La "a" (Va "a"))
+
+(((λs.(λq.((s q) q))) (λa.a)) b)
+AP (AP (La "s" (La "q" (AP (AP (Va "s") (Va "q")) (Va "q")))) (La "a" (Va "a"))) (Va "b")
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+(λs.λq.s q q) (λq.q) q
+(((λs.(λq.((s q) q))) (λq.q)) q) -> NO forma normal
+
+(s q)
+AP (Va "s") (Va "q")
+
+((s q) q)
+AP (AP (Va "s") (Va "q")) (Va "q")
+
+(λq.((s q) q))
+La "q" (AP (AP (Va "s") (Va "q")) (Va "q"))
+
+(λs.(λq.((s q) q)))
+La "s" (La "q" (AP (AP (Va "s") (Va "q")) (Va "q")))
+
+(λq.q)
+La "q" (Va "q")
+
+((λs.(λq.((s q) q))) (λq.q))
+AP (La "s" (La "q" (AP (AP (Va "s") (Va "q")) (Va "q")))) (La "q" (Va "q"))
+
+(((λs.(λq.((s q) q))) (λq.q)) q)
+AP (AP (La "s" (La "q" (AP (AP (Va "s") (Va "q")) (Va "q")))) (La "q" (Va "q"))) (Va "q")
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+(((λs. (s s)) (λq.q)) (λq.q)) -> NO forma normal
+
+(s s)
+AP (Va "s") (Va "s")
+
+(λs. (s s))
+La "s" (AP (Va "s") (Va "s"))
+
+(λq.q)
+La "q" (Va "q")
+
+((λs. (s s)) (λq.q))
+AP (La "s" (AP (Va "s") (Va "s"))) (La "q" (Va "q"))
+
+(((λs. (s s)) (λq.q)) (λq.q))
+AP (AP (La "s" (AP (Va "s") (Va "s"))) (La "q" (Va "q"))) (La "q" (Va "q"))
+
 
 
 
