@@ -14,17 +14,10 @@ instance Show LT where
 instance Eq LT where 
     (==) (Va x) (Va x') = x==x'
 
-
--- 2
-
-
 -- working ---
 freeVars :: LT -> [Var]
 freeVars (Va v) = ([v])
 freeVars (AP a b) = freeVars a `union` freeVars b
---        delete    lt
---          |        |
---($) :: (a -> b) -> a -> b 
 freeVars (La v lt) = delete v $ freeVars lt
 
 -- freeAndBoundVars (La "y" (AP (Va "y") (La "x" (AP (Va "x") (Va "z")))))
@@ -46,11 +39,11 @@ variables (La x lt) = variables lt `union` [x]
 
 
 --subs_i (La "x" (AP (Va "x") (Va "x"))) "x" (AP (Va "y") (Va "z"))
-subs_i :: LT->Var->LT->LT
-subs_i var@(Va v) x e = if v==x then e else var
-subs_i ap@(AP a b) x e = AP (subs_i a x e) (subs_i b x e)   
-subs_i la@(La v lt) x e | x == v = subs_i lt x e
-                        | otherwise = La v (subs_i lt x e)
+--subs_i :: LT->Var->LT->LT
+--subs_i var@(Va v) x e = if v==x then e else var
+--subs_i ap@(AP a b) x e = AP (subs_i a x e) (subs_i b x e)   
+--subs_i la@(La v lt) x e | x == v = subs_i lt x e
+--                        | otherwise = La v (subs_i lt x e)
 
 -- SUBSTITUCIO ALFA                        
 subs_a :: LT->Var->LT->LT
@@ -117,14 +110,7 @@ esta_normal (AP a b) =  dreta && esquerra
         (Va e) -> True
 
 -- 3 
-fresh_ :: [String] -> String
-fresh_ = foldl diagonalise "a"
-diagonalise [] [] = "a" -- diagonalised any way
-diagonalise [] (y:ys) | y == 'a' = "b" -- diagonalise on this character
-                      | otherwise = "a"
-diagonalise s [] = s -- anyway s is differnt from t
-diagonalise s@(x:xs) (y:ys) | x /= y = s -- differs at this position anyway
-                            | otherwise = x : diagonalise xs ys
+
 -- 4 
 
 -- 5 
