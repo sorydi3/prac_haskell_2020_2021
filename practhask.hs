@@ -191,6 +191,8 @@ iNormalitza f x n = if esta_normal x then (n,x) else iNormalitza f (f x) (n+1)
 ----------------------------------------------- DE BRUIJN NOTATION ------------------------------------
 -------------------------------------------------------------------------------------------------------
 type Nombre = Integer
+type Context=[Var]
+type VNamesContext = [Var]
 data LTdB = Nat Nombre |Ap LTdB LTdB | L Var LTdB
 
 instance Eq LTdB where
@@ -202,8 +204,20 @@ instance Show LTdB where
     show (L _ lt) = "(\\."++ show lt ++ ")"
     show (Ap lt lv) = "("++ show lt++" "++ show lv ++ ")"
 
+index::Context->Var->Integer
+index [] _ = error "Llista buida"
+index (x:xs) x' | x == x' = 0
+                | otherwise = 1 + index xs x'
 
---a_deBruijn::LT->LTdB
+
+i_deBruijn::LT->[Var]->LTdB
+i_deBruijn va@(Va x) xs  = Nat (index xs x)
+i_deBruijn la@(La x lt) xs = L x (i_deBruijn lt (x:xs))
+i_deBruijn ap@(AP a b) xs = Ap (i_deBruijn a xs) (i_deBruijn b xs)
+
+
+a_deBruijn::LT->LTdB
+a_deBruijn lt = i_deBruijn lt []
 
 --de_deBruijn::LTdB-> LT
 
