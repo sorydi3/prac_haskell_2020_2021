@@ -182,3 +182,29 @@ replaceFirst a x (b:bc) | a == b    = x:bc
 iNormalitza :: (LT->LT)->LT -> Integer -> (Integer, LT)
 iNormalitza _ x@(Va v) n = (n,x)
 iNormalitza f x n = if esta_normal x then (n,x) else iNormalitza f (f x) (n+1)
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------
+----------------------------------------------- DE BRUIJN NOTATION ------------------------------------
+-------------------------------------------------------------------------------------------------------
+type Nombre = Integer
+data LTdB = Nat Nombre |Ap LTdB LTdB | L Var LTdB
+
+instance Eq LTdB where
+    (==) (Nat x) (Nat x') = x==x'
+
+
+instance Show LTdB where 
+    show (Nat x) = show x
+    show (L _ lt) = "(\\."++ show lt ++ ")"
+    show (Ap lt lv) = "("++ show lt++" "++ show lv ++ ")"
+
+
+--a_deBruijn::LT->LTdB
+
+--de_deBruijn::LTdB-> LT
+
+
