@@ -274,9 +274,9 @@ a_deBruijn lt = i_deBruijn lt ["x","y","z","a","b","c"] -- li passem el lamda i 
 i_de_deBruijn::LTdB->Context->LT
 i_de_deBruijn va@(Nat v) xs = Va (xs!!v)
 i_de_deBruijn la@(L lt) xs = La t' (i_de_deBruijn lt (t':xs))
-  where
-    v = charToString ['a'..'z'] -- Generem possibles noms de variables
-    t' = last (reverse [x| x<-v, not (x `elem` xs)]) -- triem un nom de variables tinguen en compte el context
+                            where
+                              v = charToString ['a'..'z'] -- Generem possibles noms de variables
+                              t' = last (reverse [x | x<-v, not (x `elem` xs)]) -- triem un nom de variables tinguen en compte el context
 
 i_de_deBruijn ap@(Ap l1 l2) xs = AP (i_de_deBruijn l1 xs) (i_de_deBruijn l2 xs) 
 
@@ -285,6 +285,13 @@ i_de_deBruijn ap@(Ap l1 l2) xs = AP (i_de_deBruijn l1 xs) (i_de_deBruijn l2 xs)
 -- Retorna : el lambda terme en forma Debruijn <LT>
 de_deBruijn::LTdB -> LT
 de_deBruijn ltd = i_de_deBruijn ltd ["x","y","z","a","b","c"]
+
+
+
+
+
+
+
 
 
 
