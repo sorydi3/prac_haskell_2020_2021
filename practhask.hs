@@ -18,6 +18,32 @@ instance Eq LT where
     (==) (Va x) (Va x') = x==x'
 
 
+-- NO FUNCIONAAA ESTOY EN ELLO
+-- helper functions for association lists
+type PairList a = [(a,a)]
+-- Donat valor de l'equerra retorna el de la dreta
+getValueRight :: (Eq a, Show a) => a -> PairList a-> Maybe a
+getValueRight x p@((a,b):ps)
+    | (length p) == 0 = Nothing
+    | otherwise = if x == a then Just b else getValueRight x ps
+getValueRight x p = Nothing
+
+addPair :: a -> b -> [(a, b)] -> [(a, b)]
+addPair a b l = (a,b):l
+
+-- Donat el valor de la dreta et retorna el de l'esquerra
+getValueLeft :: (Eq a, Show a) => a -> PairList a -> Maybe a
+getValueLeft x = getValueRight x . map (\(a,b) -> (b,a))
+
+
+(=*=) :: LT -> LT -> Bool
+a =*= b = eq [] a b where
+  eq list (La x lt1) (La y lt2) = eq (addPair x y list) lt1 lt2
+  eq list (Va x) (Va y) = if (length list) == 0 then x == y else getValueRight x list == (Just y) && (Just x) == getValueLeft y list
+  eq list (AP lt1 lt2) (AP lt3 lt4) = eq list lt1 lt3 && eq list lt2 lt4 -- Simplement mirar si els lt son iguals dos a dos
+  eq list _ _ = False
+
+
 --          Funció que retorna una tupla amb les variables lliures i lligades del lambda-terme donat.
 -- Param 1: Lambda-terme a avaluar.
 -- Retorna: Tupla (<freeVars>,<boundVars>) amb dos llistes, la primera representant les variables lliures
@@ -100,13 +126,11 @@ redueix_un_n x@(AP (La v lt1) lt2) = beta_redueix x
 redueix_un_n x@(AP lt1 lt2) = AP (redueix_un_n lt1) (redueix_un_n lt2)
 
 
---redueix_un_a 
 --          Funció on es passa un lambda-terme i s'aplica la primera beta-reducció en ordre aplicatiu.
 --          Si el lambda-terme passat no té cap redex, retorna el mateix lambda-terme.
 -- Param 1: Lambda-terme sobre el que realitzar la reducció.
 -- Retorna: El lambda-terme <param 1> amb la primera beta-reducció en ordre aplicatiu feta, 
 --          si no és un redex retorna el mateix lambda-terme.
-
 redueix_un_a::LT->LT
 redueix_un_a x@(Va v) = x
 redueix_un_a x@(La v lt) | not (esta_normal lt) = La v (redueix_un_a lt)
@@ -174,17 +198,52 @@ replaceFirst a x (b:bc) | a == b    = x:bc
                      | otherwise = b : replaceFirst a x bc
 
 
---          Inmersió de la funció normalitza_n. Realitza la mateixa funció excepte que a aqueste se li passa un paràmetre extra
---          per així comptar quantes passes (crides a la funció) s'han fet.
--- Param 1: Lambda-terme sobre el que buscar la forma normal.
--- Param 2: Nombre de passes que s'han realitzat fins al moment de cridar la funció.
--- Retorna: El mateix que normalitza_n
-iNormalitza :: (LT->LT)->LT -> Integer -> (Integer, LT)
+--          Inmersió de la funció normalitza_n i normalitza_a. 
+--          Realitza la mateixa funció excepte que a aqueste se li passa dos paràmetres extres.
+-- Param 1: Funció a aplicar sobre el <param 2>
+-- Param 2: Lambda-terme sobre el que buscar la forma normal.
+-- Param 3: Nombre de passes que s'han realitzat fins al moment de cridar la funció.
+-- Retorna: El mateix que normalitza_n i normalitza_a
+iNormalitza :: (LT -> LT) -> LT -> Integer -> (Integer, LT)
 iNormalitza _ x@(Va v) n = (n,x)
 iNormalitza f x n = if esta_normal x then (n,x) else iNormalitza f (f x) (n+1)
 
 
+-------------------------------------------------------------------------------------------------------
+------------------------------------------- METE LLENGUATGE -------------------------------------------
+-------------------------------------------------------------------------------------------------------
+identitat = (La "x" (Va "x"))
+true = (La "x" (La "y" (Va "x")))
+false = (La "x" (La "y" (Va "y")))
+meta_not = (La "t" (AP (AP (Va "t") (false)) (true)))
 
+---------------------------------------- OPERANDS ----------------------------------------
+-- Rep dos lambda-termes i aplica una AND lògica entre ells
+meta_and :: LT -> LT -> LT --------- ---> No es pot posar and pq ja existeix aquesta funcio
+meta_and lt1 lt2 = snd (normalitza_n (AP (AP ((La "x" (La "y" (AP (AP (Va "x") (Va "y")) false)))) lt1) lt2))
+
+-- Rep dos lambda-termes i aplica una OR lògica entre ells
+meta_or :: LT -> LT -> LT
+meta_or lt1 lt2 = snd (normalitza_n (AP (AP (La "x" (La "y" (AP (AP (Va "x") (true)) (Va "y")))) (lt1)) (lt2)))
+
+-- Rep dos lambda-termes i aplica una XOR lògica entre ells
+meta_xor :: LT -> LT -> LT
+meta_xor lt1 lt2 = snd (normalitza_n (AP (AP (La "x" (La "y" (AP (AP (Va "x") (AP (AP (Va "y") (false)) (true))) (Va "y")))) (lt1)) (lt2)))
+
+------------------------------------ TUPLES I LLISTES ------------------------------------
+meta_fst = (La "x" (AP (Va "x") true))
+meta_snd = (La "x" (AP (Va "x") false))
+tupla = (La "x" (La "y" (La "p" (AP (AP (Va "p") (Va "x")) (Va "y")))))
+
+----------------------------------------- NOMBRES ----------------------------------------
+zero = (La "f" (La "x" (Va "x")))
+un = (La "f" (La "x" (AP (Va "f") (Va "x"))))
+dos = (La "f" (La "x" (AP (Va "f") (AP (Va "f") (Va "x")))))
+tres = (La "f" (La "x" (AP (Va "f") (AP (Va "f") (AP (Va "f") (Va "x"))))))
+quatre = (La "f" (La "x" (AP (Va "f") (AP (Va "f") (AP (Va "f") (AP (Va "f") (Va "x")))))))
+cinc = (La "f" (La "x" (AP (Va "f") (AP (Va "f") (AP (Va "f") (AP (Va "f") (AP (Va "f") (Va "x"))))))))
+
+suc = (La "n" (La "f" (La "x" (AP (AP (Va "n") (Va "f")) (AP (Va "f") (Va "x"))))))
 
 
 -------------------------------------------------------------------------------------------------------
@@ -205,6 +264,18 @@ t3 = (La "z" (AP (Va "x") (La "x" (Va "x"))))
 
 instance Eq LTdB where
     (==) (Nat x) (Nat x') = x==x'
+
+-- TRET DE STACK OVERFLOW, MAYBE??
+-- https://stackoverflow.com/questions/47704945/haskell-lambda-alpha-equivalence
+-- varN :: Eq a => a -> [a] -> Int
+-- varN a xs = v 0 xs where
+--   v n (x:xs) = if a == x then n else v (n+1) xs
+
+-- a =*= b = eq [] [] a b in where
+--   eq k l (Lam n x) (Lam m y) = eq (n:k) (m:l) x y
+--   eq k l (Var n) (Var m) = varN n k == varN m l
+--   eq k l (App f u) (App g v) = eq k l f g && eq k l u v
+--   eq k l _ _ = False
 
 
 instance Show LTdB where 
