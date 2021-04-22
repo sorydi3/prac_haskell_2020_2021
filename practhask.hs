@@ -192,8 +192,16 @@ iNormalitza f x n = if esta_normal x then (n,x) else iNormalitza f (f x) (n+1)
 -------------------------------------------------------------------------------------------------------
 type Nombre = Integer
 type Context=[Var]
-type VNamesContext = [Var]
 data LTdB = Nat Nombre |Ap LTdB LTdB | L Var LTdB
+
+t1::LT
+t1 = (La "z" (AP (AP (Va "z") (Va "x")) (Va "y")))
+
+t2::LT
+t2 = (AP (AP (Va "x") (Va "z")) (Va "y"))
+
+t3::LT
+t3 = (La "z" (AP (Va "x") (La "x" (Va "x"))))
 
 instance Eq LTdB where
     (==) (Nat x) (Nat x') = x==x'
@@ -205,7 +213,7 @@ instance Show LTdB where
     show (Ap lt lv) = "("++ show lt++" "++ show lv ++ ")"
 
 index::Context->Var->Integer
-index [] _ = error "Llista buida"
+index [] _ = error "variable no esta a la llista"
 index (x:xs) x' | x == x' = 0
                 | otherwise = 1 + index xs x'
 
@@ -217,8 +225,8 @@ i_deBruijn ap@(AP a b) xs = Ap (i_deBruijn a xs) (i_deBruijn b xs)
 
 
 a_deBruijn::LT->LTdB
-a_deBruijn lt = i_deBruijn lt []
-
+a_deBruijn lt = i_deBruijn lt ["x","y","z","a","b","c"]
+    
 --de_deBruijn::LTdB-> LT
 
 
