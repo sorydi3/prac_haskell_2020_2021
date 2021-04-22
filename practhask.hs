@@ -249,9 +249,9 @@ suc = (La "n" (La "f" (La "x" (AP (AP (Va "n") (Va "f")) (AP (Va "f") (Va "x")))
 -------------------------------------------------------------------------------------------------------
 ----------------------------------------------- DE BRUIJN NOTATION ------------------------------------
 -------------------------------------------------------------------------------------------------------
-type Nombre = Integer
+type Nombre = Int
 type Context=[Var]
-data LTdB = Nat Nombre |Ap LTdB LTdB | L Var LTdB
+data LTdB = Nat Nombre |Ap LTdB LTdB | L LTdB
 
 t1::LT
 t1 = (La "z" (AP (AP (Va "z") (Va "x")) (Va "y")))
@@ -261,6 +261,9 @@ t2 = (AP (AP (Va "x") (Va "z")) (Va "y"))
 
 t3::LT
 t3 = (La "z" (AP (Va "x") (La "x" (Va "x"))))
+
+t3_d::LTdB
+t3_d = (L (Ap (Nat 1) (L (Nat 0))))
 
 instance Eq LTdB where
     (==) (Nat x) (Nat x') = x==x'
@@ -280,24 +283,39 @@ instance Eq LTdB where
 
 instance Show LTdB where 
     show (Nat x) = show x
-    show (L _ lt) = "(\\."++ show lt ++ ")"
+    show (L lt) = "(\\."++ show lt ++ ")"
     show (Ap lt lv) = "("++ show lt++" "++ show lv ++ ")"
 
-index::Context->Var->Integer
+index::Context->Var->Int
 index [] _ = error "variable no esta a la llista"
 index (x:xs) x' | x == x' = 0
                 | otherwise = 1 + index xs x'
 
 
-i_deBruijn::LT->[Var]->LTdB
+i_deBruijn::LT->Context->LTdB
 i_deBruijn va@(Va x) xs  = Nat (index xs x)
-i_deBruijn la@(La x lt) xs = L x (i_deBruijn lt (x:xs))
+i_deBruijn la@(La x lt) xs = L (i_deBruijn lt (x:xs))
 i_deBruijn ap@(AP a b) xs = Ap (i_deBruijn a xs) (i_deBruijn b xs)
 
 
 a_deBruijn::LT->LTdB
 a_deBruijn lt = i_deBruijn lt ["x","y","z","a","b","c"]
-    
---de_deBruijn::LTdB-> LT
 
+
+de_deBruijn::LTdB -> LT
+de_deBruijn ltd = i_de_deBruijn ltd ["x","y","z","a","b","c"]
+
+
+charToString :: [Char] -> [Var]
+charToString [] =[]
+charToString (c:cs) = [c]:charToString cs
+
+i_de_deBruijn::LTdB->Context->LT
+i_de_deBruijn va@(Nat v) xs = Va (xs!!v)
+i_de_deBruijn la@(L lt) xs = La t' (i_de_deBruijn lt (t':xs))
+  where
+    v = charToString ['a'..'z']
+    t' = last [x| x<-v,not (x `elem` xs)]
+
+i_de_deBruijn ap@(Ap l1 l2) xs = AP (i_de_deBruijn l1 xs) (i_de_deBruijn l2 xs) 
 
