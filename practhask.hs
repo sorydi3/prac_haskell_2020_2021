@@ -15,8 +15,7 @@ instance Show LT where
 
 
 instance Eq LT where 
-    (==) (Va x) (Va x') = x==x'
-
+    (==) lt1 lt2 = (a_deBruijn lt1) == (a_deBruijn lt2)
 
 -- NO FUNCIONAAA ESTOY EN ELLO
 -- helper functions for association lists
@@ -176,38 +175,6 @@ normalitza_a x = iNormalitza redueix_un_a x 0
 
 
 
-------------------------------------------------------------------
--- Altres funcions necessàries per al funcionament del programa --
-------------------------------------------------------------------
-
---          De la llista de possibles noms de variables, retorna la primera que no estigui lligada
--- Param 1: Llista de variables lligades
--- Retorna: Primera variable que estigui lliure, és a dir, que no estigui a la llista passada
-firstNonBoundVar :: [Var] -> Var
-firstNonBoundVar bVars = (possible_vars \\ bVars)!!0 -- Es fa la diferència entre les llistes i s'agafa el primer element
-
-
---          Reemplaça la primera instància de <param 1> per <param 2> a la llista donada mirant d'esquerra a dreta.
--- Param 1: Paràmetre a buscar i substituir
--- Param 2: Nou paràmetre substitut de <param 1>
--- Param 3: Llista on realitzar la cerca i substitució
--- Retorna: La llista original però la primera instància de <param 1> substituida per <param 2>
-replaceFirst :: (Eq a) => a -> a -> [a] -> [a]
-replaceFirst _ _ [] = []
-replaceFirst a x (b:bc) | a == b    = x:bc 
-                     | otherwise = b : replaceFirst a x bc
-
-
---          Inmersió de la funció normalitza_n i normalitza_a. 
---          Realitza la mateixa funció excepte que a aqueste se li passa dos paràmetres extres.
--- Param 1: Funció a aplicar sobre el <param 2>
--- Param 2: Lambda-terme sobre el que buscar la forma normal.
--- Param 3: Nombre de passes que s'han realitzat fins al moment de cridar la funció.
--- Retorna: El mateix que normalitza_n i normalitza_a
-iNormalitza :: (LT -> LT) -> LT -> Integer -> (Integer, LT)
-iNormalitza _ x@(Va v) n = (n,x)
-iNormalitza f x n = if esta_normal x then (n,x) else iNormalitza f (f x) (n+1)
-
 
 -------------------------------------------------------------------------------------------------------
 ------------------------------------------- METE LLENGUATGE -------------------------------------------
@@ -250,72 +217,154 @@ suc = (La "n" (La "f" (La "x" (AP (AP (Va "n") (Va "f")) (AP (Va "f") (Va "x")))
 ----------------------------------------------- DE BRUIJN NOTATION ------------------------------------
 -------------------------------------------------------------------------------------------------------
 type Nombre = Int
-type Context=[Var]
-data LTdB = Nat Nombre |Ap LTdB LTdB | L LTdB
+type Context=[Var] -- Llista de variables per el Context
+data LTdB = Nat Nombre |Ap LTdB LTdB | L LTdB -- Tipus de dades per representar els lambdes termes en format debruijn
 
-t1::LT
-t1 = (La "z" (AP (AP (Va "z") (Va "x")) (Va "y")))
-
-t2::LT
-t2 = (AP (AP (Va "x") (Va "z")) (Va "y"))
-
-t3::LT
-t3 = (La "z" (AP (Va "x") (La "x" (Va "x"))))
-
-t3_d::LTdB
-t3_d = (L (Ap (Nat 1) (L (Nat 0))))
-
+-- Instancia d'igualitat <Eq> per comparar dues termes en format Debruijn
+-- Param 1 : Lambda Terme en format Debruijn <LTdB>
+-- Param 2 : Lambda Terme en format Debruijn <LTdB>
+-- Retorna : True si les dues termes son iguals altrament Fals
 instance Eq LTdB where
     (==) (Nat x) (Nat x') = x==x'
+    (==) (L l1) (L l2) = l1 == l2
+    (==) (Ap l1 l2) (Ap l1' l2') = l1==l1' && l2==l2'
+    (==) _  _ = False
 
--- TRET DE STACK OVERFLOW, MAYBE??
--- https://stackoverflow.com/questions/47704945/haskell-lambda-alpha-equivalence
--- varN :: Eq a => a -> [a] -> Int
--- varN a xs = v 0 xs where
---   v n (x:xs) = if a == x then n else v (n+1) xs
-
--- a =*= b = eq [] [] a b in where
---   eq k l (Lam n x) (Lam m y) = eq (n:k) (m:l) x y
---   eq k l (Var n) (Var m) = varN n k == varN m l
---   eq k l (App f u) (App g v) = eq k l f g && eq k l u v
---   eq k l _ _ = False
-
+-- Instancia  <show> per poder mostrar per pantalla els termes en format debruijn
+-- Param 1 : Lambda Terme en format Debruijn <LTdB>
+-- Param 2 : Lambda Terme en format Debruijn <LTdB>
+-- Retorna : Mostra per pantalla el terme amb el seguent format ex --> \.0 equival a \x.x 
 
 instance Show LTdB where 
     show (Nat x) = show x
     show (L lt) = "(\\."++ show lt ++ ")"
     show (Ap lt lv) = "("++ show lt++" "++ show lv ++ ")"
 
+-- Retorna l'index d'un element x dins d'una llista
+-- Param 1 : llista d'elements
+-- Param 2 : l'element que estem buscan
+-- Retorna : retorna la posicio de l'element x ,i si no hi es llaçem una excepcio
 index::Context->Var->Int
 index [] _ = error "variable no esta a la llista"
 index (x:xs) x' | x == x' = 0
                 | otherwise = 1 + index xs x'
 
-
+                
+-- funcio inmersiva que rep un  LT i retorna aquest mateix terme pero en format debruijn
+-- Param 1 : Lambda terme que volem transformar en format debruijn
+-- Param 2 : llista variables del context
+-- Retorna : el lambda terme en forma Debruijn <LTdB>
 i_deBruijn::LT->Context->LTdB
 i_deBruijn va@(Va x) xs  = Nat (index xs x)
 i_deBruijn la@(La x lt) xs = L (i_deBruijn lt (x:xs))
 i_deBruijn ap@(AP a b) xs = Ap (i_deBruijn a xs) (i_deBruijn b xs)
 
 
+-- Funcio que rep un <LT> i retorna aquest mateix terme pero en format debruijn <LTdB> 
+-- Param 1 : Lambda terme que volem transformar en format debruijn
+-- Retorna : el lambda terme en forma Debruijn <LTdB>
 a_deBruijn::LT->LTdB
-a_deBruijn lt = i_deBruijn lt ["x","y","z","a","b","c"]
+a_deBruijn lt = i_deBruijn lt ["x","y","z","a","b","c"] -- li passem el lamda i la llista del context
 
 
-de_deBruijn::LTdB -> LT
-de_deBruijn ltd = i_de_deBruijn ltd ["x","y","z","a","b","c"]
-
-
-charToString :: [Char] -> [Var]
-charToString [] =[]
-charToString (c:cs) = [c]:charToString cs
-
+-- funcio inmersiva que rep un  LTdB i retorna aquest mateix terme pero en format LT
+-- Param 1 : Lambda terme que volem transformar en format LT
+-- Param 2 : llista variables del context
+-- Retorna : el lambda terme en forma Debruijn LT
 i_de_deBruijn::LTdB->Context->LT
 i_de_deBruijn va@(Nat v) xs = Va (xs!!v)
 i_de_deBruijn la@(L lt) xs = La t' (i_de_deBruijn lt (t':xs))
   where
-    v = charToString ['a'..'z']
-    t' = last [x| x<-v,not (x `elem` xs)]
+    v = charToString ['a'..'z'] -- Generem possibles noms de variables
+    t' = last (reverse [x| x<-v, not (x `elem` xs)]) -- triem un nom de variables tinguen en compte el context
 
 i_de_deBruijn ap@(Ap l1 l2) xs = AP (i_de_deBruijn l1 xs) (i_de_deBruijn l2 xs) 
 
+-- Funcio que rep un <LTdB> i retorna aquest mateix terme pero en format debruijn <LT> 
+-- Param 1 : Lambda terme que volem transformar en format LTdB
+-- Retorna : el lambda terme en forma Debruijn <LT>
+de_deBruijn::LTdB -> LT
+de_deBruijn ltd = i_de_deBruijn ltd ["x","y","z","a","b","c"]
+
+
+
+
+
+                    ------------------------------------------------------------------
+                    -- Altres funcions necessàries per al funcionament del programa --
+                    ------------------------------------------------------------------
+
+--          De la llista de possibles noms de variables, retorna la primera que no estigui lligada
+-- Param 1: Llista de variables lligades
+-- Retorna: Primera variable que estigui lliure, és a dir, que no estigui a la llista passada
+firstNonBoundVar :: [Var] -> Var
+firstNonBoundVar bVars = (possible_vars \\ bVars)!!0 -- Es fa la diferència entre les llistes i s'agafa el primer element
+
+
+--          Reemplaça la primera instància de <param 1> per <param 2> a la llista donada mirant d'esquerra a dreta.
+-- Param 1: Paràmetre a buscar i substituir
+-- Param 2: Nou paràmetre substitut de <param 1>
+-- Param 3: Llista on realitzar la cerca i substitució
+-- Retorna: La llista original però la primera instància de <param 1> substituida per <param 2>
+replaceFirst :: (Eq a) => a -> a -> [a] -> [a]
+replaceFirst _ _ [] = []
+replaceFirst a x (b:bc) | a == b    = x:bc 
+                     | otherwise = b : replaceFirst a x bc
+
+
+--          Inmersió de la funció normalitza_n i normalitza_a. 
+--          Realitza la mateixa funció excepte que a aqueste se li passa dos paràmetres extres.
+-- Param 1: Funció a aplicar sobre el <param 2>
+-- Param 2: Lambda-terme sobre el que buscar la forma normal.
+-- Param 3: Nombre de passes que s'han realitzat fins al moment de cridar la funció.
+-- Retorna: El mateix que normalitza_n i normalitza_a
+iNormalitza :: (LT -> LT) -> LT -> Integer -> (Integer, LT)
+iNormalitza _ x@(Va v) n = (n,x)
+iNormalitza f x n = if esta_normal x then (n,x) else iNormalitza f (f x) (n+1)
+
+--        Transforma una llista de chars en una llista d'strings 
+-- Param 1: llista de chars per tranformar
+-- Retorna: El mateix que normalitza_n i normalitza_a
+charToString :: [Char] -> [Var]
+charToString [] =[]
+charToString (c:cs) = [c]:charToString cs
+
+------------------------------------- TERMES PER PROVAR EL FUNCIONAMENT ---------------------------
+
+t1::LT
+t1 = (La "z" (AP (AP (Va "z") (Va "x")) (Va "y")))
+
+t1_d::LTdB
+t1_d = a_deBruijn t1
+
+t2::LT
+t2 = (AP (AP (Va "x") (Va "z")) (Va "y"))
+
+t2_d::LTdB
+t2_d = a_deBruijn t2
+
+t3::LT
+t3 = (La "z" (AP (Va "x") (La "x" (Va "x"))))
+
+t3_d::LTdB
+t3_d = a_deBruijn t3
+
+t5::LT
+t5 = (AP (La "x" (AP (Va "x") (Va "x"))) (La "x" (AP (Va "x") (Va "x"))) )
+
+t5_d::LTdB
+t5_d = a_deBruijn t5
+
+
+t6::LT
+t6 = (La "x" (La "y" (La "s" (La "z" (AP (AP (Va "x") (Va "s")) (AP (AP (Va "y") (Va "s")) (Va "z")) )))))
+
+t6_d::LTdB
+t6_d = a_deBruijn t6
+
+
+t7::LT
+t7 = (La "x" (La "y" (La "s" (La "z" (AP (AP (Va "x") (Va "z")) (AP (AP (Va "y") (Va "s")) (Va "z")) )))))
+
+t7_d::LTdB
+t7_d = a_deBruijn t7
