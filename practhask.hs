@@ -7,7 +7,6 @@ data LT  = Va Var | La Var LT | AP LT LT
 possible_vars = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
 
 --"Show lambda terme"
-
 instance Show LT where 
     show (Va x) = x
     show (La v lt) = "(\\"++v++". "++ show lt ++ ")"
@@ -238,6 +237,7 @@ type Nombre = Int
 type Context = [Var] -- Llista de variables per el Context
 data LTdB = Nat Nombre | Ap LTdB LTdB | L LTdB -- Tipus de dades per representar els lambdes termes en format debruijn
 
+
 --          Instancia d'igualitat <Eq> per comparar dues termes en format Debruijn
 -- Param 1: Lambda Terme en format Debruijn <LTdB>
 -- Param 2: Lambda Terme en format Debruijn <LTdB>
@@ -248,6 +248,7 @@ instance Eq LTdB where
     (==) (Ap l1 l2) (Ap l1' l2') = l1==l1' && l2==l2'
     (==) _  _ = False
 
+
 --          Instancia  <show> per poder mostrar per pantalla els termes en format Debruijn
 -- Param 1: Lambda Terme en format Debruijn <LTdB>
 -- Param 2: Lambda Terme en format Debruijn <LTdB>
@@ -257,16 +258,14 @@ instance Show LTdB where
     show (L lt) = "(\\."++ show lt ++ ")"
     show (Ap lt lv) = "("++ show lt++" "++ show lv ++ ")"
 
---          Retorna l'index d'un element x dins d'una llista
--- Param 1: Llista d'elements
--- Param 2: L'element que estem buscan
--- Retorna: Retorna la posicio de l'element x ,i si no hi es llaçem una excepcio
-index :: Context -> Var -> Int
-index [] _ = error "variable no esta a la llista"
-index (x:xs) x' | x == x' = 0
-                | otherwise = 1 + index xs x'
 
-                
+--          Funció que rep un <LT> i retorna aquest mateix terme pero en format Debruijn <LTdB> 
+-- Param 1: Lambda terme que volem transformar en format Debruijn
+-- Retorna: El lambda terme en forma Debruijn <LTdB>
+a_deBruijn :: LT -> LTdB
+a_deBruijn lt = i_deBruijn lt ["x","y","z","a","b","c"] -- li passem el lamda i la llista del context
+
+
 --          Funció inmersiva que rep un  LT i retorna aquest mateix terme pero en format Debruijn
 -- Param 1: Lambda terme que volem transformar en format Debruijn
 -- Param 2: Llista variables del context
@@ -277,11 +276,11 @@ i_deBruijn la@(La x lt) xs = L (i_deBruijn lt (x:xs))
 i_deBruijn ap@(AP a b) xs = Ap (i_deBruijn a xs) (i_deBruijn b xs)
 
 
---          Funció que rep un <LT> i retorna aquest mateix terme pero en format Debruijn <LTdB> 
--- Param 1: Lambda terme que volem transformar en format Debruijn
--- Retorna: El lambda terme en forma Debruijn <LTdB>
-a_deBruijn :: LT -> LTdB
-a_deBruijn lt = i_deBruijn lt ["x","y","z","a","b","c"] -- li passem el lamda i la llista del context
+--          Funció que rep un <LTdB> i retorna aquest mateix terme pero en format Debruijn <LT> 
+-- Param 1: Lambda terme que volem transformar en format LTdB
+-- Retorna: El lambda terme en forma Debruijn <LT>
+de_deBruijn :: LTdB -> LT
+de_deBruijn ltd = i_de_deBruijn ltd ["x","y","z","a","b","c"]
 
 
 --          Funció inmersiva que rep un  LTdB i retorna aquest mateix terme pero en format LT
@@ -296,12 +295,6 @@ i_de_deBruijn la@(L lt) xs = La t' (i_de_deBruijn lt (t':xs))
                               t' = last (reverse [x | x<-v, not (x `elem` xs)]) -- triem un nom de variables tinguen en compte el context
 
 i_de_deBruijn ap@(Ap l1 l2) xs = AP (i_de_deBruijn l1 xs) (i_de_deBruijn l2 xs) 
-
---          Funció que rep un <LTdB> i retorna aquest mateix terme pero en format Debruijn <LT> 
--- Param 1: Lambda terme que volem transformar en format LTdB
--- Retorna: El lambda terme en forma Debruijn <LT>
-de_deBruijn :: LTdB -> LT
-de_deBruijn ltd = i_de_deBruijn ltd ["x","y","z","a","b","c"]
 
 
 
@@ -336,6 +329,17 @@ replaceFirst a x (b:bc) | a == b    = x:bc
 iNormalitza :: (LT -> LT) -> LT -> Integer -> (Integer, LT)
 iNormalitza _ x@(Va v) n = (n,x)
 iNormalitza f x n = if esta_normal x then (n,x) else iNormalitza f (f x) (n+1)
+
+
+--          Retorna l'index d'un element x dins d'una llista
+-- Param 1: Llista d'elements
+-- Param 2: L'element que estem buscan
+-- Retorna: Retorna la posicio de l'element x ,i si no hi es llaçem una excepcio
+index :: Context -> Var -> Int
+index [] _ = error "variable no esta a la llista"
+index (x:xs) x' | x == x' = 0
+                | otherwise = 1 + index xs x'
+
 
 --          Transforma una llista de chars en una llista de Var 
 -- Param 1: Llista de chars per tranformar
@@ -386,3 +390,11 @@ t7_d = a_deBruijn t7
 
 t8 :: LT
 t8 = AP meta_fst (AP (AP tupla zero) un)
+
+lt1 = (AP (AP (La "x" (La "y" (AP (Va "x") (Va "y")))) (Va "w")) (Va "z"))
+lt2 = (AP (AP (La "s" (AP (Va "s") (Va "s"))) (La "q" (Va "q"))) (La "q" (Va "q")))
+lt3 = (AP (La "x" (AP (Va "x") (Va "y"))) (La "z" (AP (Va "w") (La "w" (AP (AP (AP (Va "w") (Va "z")) (Va "y")) (Va "x"))))))
+lt4 = (AP (AP (La "z" (Va "z")) (La "q" (AP (Va "q") (Va "q")))) (La "s" (AP (Va "s") (Va "a"))))
+lt5 = (AP (AP (La "z" (Va "z")) (La "z" (AP (Va "z") (Va "z")))) (La "z" (AP (Va "z") (Va "q"))))
+lt6 = (AP (AP (La "s" (La "q" (AP (AP (Va "s") (Va "q")) (Va "q")))) (La "a" (Va "a"))) (Va "b"))
+lt7 = (AP (AP (La "s" (La "q" (AP (AP (Va "s") (Va "q")) (Va "q")))) (La "q" (Va "q"))) (Va "q"))
