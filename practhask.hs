@@ -184,35 +184,55 @@ true = (La "x" (La "y" (Va "x")))
 false = (La "x" (La "y" (Va "y")))
 meta_not = (La "t" (AP (AP (Va "t") (false)) (true)))
 
----------------------------------------- OPERANDS ----------------------------------------
--- Rep dos lambda-termes i aplica una AND lògica entre ells
-meta_and :: LT -> LT -> LT --------- ---> No es pot posar and pq ja existeix aquesta funcio
-meta_and lt1 lt2 = snd (normalitza_n (AP (AP ((La "x" (La "y" (AP (AP (Va "x") (Va "y")) false)))) lt1) lt2))
-
--- Rep dos lambda-termes i aplica una OR lògica entre ells
-meta_or :: LT -> LT -> LT
-meta_or lt1 lt2 = snd (normalitza_n (AP (AP (La "x" (La "y" (AP (AP (Va "x") (true)) (Va "y")))) (lt1)) (lt2)))
-
--- Rep dos lambda-termes i aplica una XOR lògica entre ells
-meta_xor :: LT -> LT -> LT
-meta_xor lt1 lt2 = snd (normalitza_n (AP (AP (La "x" (La "y" (AP (AP (Va "x") (AP (AP (Va "y") (false)) (true))) (Va "y")))) (lt1)) (lt2)))
-
 ------------------------------------ TUPLES I LLISTES ------------------------------------
+meta_fst :: LT
 meta_fst = (La "x" (AP (Va "x") true))
+meta_snd :: LT
 meta_snd = (La "x" (AP (Va "x") false))
+tupla :: LT
 tupla = (La "x" (La "y" (La "p" (AP (AP (Va "p") (Va "x")) (Va "y")))))
 
 ----------------------------------------- NOMBRES ----------------------------------------
+zero :: LT
 zero = (La "f" (La "x" (Va "x")))
+un :: LT
 un = (La "f" (La "x" (AP (Va "f") (Va "x"))))
+dos :: LT
 dos = (La "f" (La "x" (AP (Va "f") (AP (Va "f") (Va "x")))))
+tres :: LT
 tres = (La "f" (La "x" (AP (Va "f") (AP (Va "f") (AP (Va "f") (Va "x"))))))
+quatre :: LT
 quatre = (La "f" (La "x" (AP (Va "f") (AP (Va "f") (AP (Va "f") (AP (Va "f") (Va "x")))))))
+cinc :: LT
 cinc = (La "f" (La "x" (AP (Va "f") (AP (Va "f") (AP (Va "f") (AP (Va "f") (AP (Va "f") (Va "x"))))))))
 
+suc :: LT
 suc = (La "n" (La "f" (La "x" (AP (AP (Va "n") (Va "f")) (AP (Va "f") (Va "x"))))))
 
+-------------------------------------------- FACTORIAL ---------------------------------------------------------
+     --- NO TROBA EL FACTORILA ES QUEDA PENJAT I NO ACABA --- ex: formaNormal (AP fact dos)
+     
+combinador :: LT
+combinador = (AP (La "x" (La "y" (AP (Va "y") (AP (AP (Va "x") (Va "x")) (Va "y")) ))) (La "x" (La "y" (AP (Va "y") (AP (AP (Va "x") (Va "x")) (Va "y")) ))))
 
+prefn :: LT
+prefn = (La "f" (La "p" (AP (AP tupla false) (AP (AP (AP meta_fst (Va "p")) (AP meta_snd (Va "p"))) (AP (Va "f") (AP meta_snd (Va "p"))) ) )))
+
+prec :: LT
+prec =(La "n" (La "f" (La "x" (AP meta_snd (AP (AP (Va "n") (AP prefn (Va "f"))) (AP (AP tupla true ) (Va "x")))))))
+--o = λn. n (λx. false ) tr
+eszero :: LT
+eszero = (La "n" (AP (AP (Va "n") (La "x" false)) true))
+-- I fact = T (λf . λn. ( eszero n → 1 | ∗ n (f (prec n)))
+
+-- SIGUI prod = λm. λn. λf . λx. m (n f ) x
+prod = (La "m" (La "n" (La "f" (La "x" ( AP (AP (Va "m") (AP (Va "n") (Va "f"))) (Va "x"))))))   
+
+fact = (AP combinador (La "f" (La "n" (AP (AP (AP eszero (Va "n")) un) (AP (AP prod (Va "n")) (AP (Va "f") (AP prec (Va "n")))) ))))
+
+formaNormal :: LT -> LT
+formaNormal lt  | not (esta_normal lt) = formaNormal (redueix_un_a lt)
+                | otherwise = lt
 -------------------------------------------------------------------------------------------------------
 ----------------------------------------------- DE BRUIJN NOTATION ------------------------------------
 -------------------------------------------------------------------------------------------------------
@@ -375,3 +395,6 @@ t7 = (La "x" (La "y" (La "s" (La "z" (AP (AP (Va "x") (Va "z")) (AP (AP (Va "y")
 
 t7_d::LTdB
 t7_d = a_deBruijn t7
+
+t8 :: LT
+t8 = AP meta_fst (AP (AP tupla zero) un)
