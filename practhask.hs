@@ -84,10 +84,10 @@ iSubst :: LT -> Var -> LT -> [Var] -> LT
 iSubst (Va v) old_val new_val bVars = if (v == old_val) && not (elem v bVars) then new_val else Va v -- Si és la variable que es vol canviar i no està lligada, llavors substituir per el nou valor
 iSubst x@(La v lt) old_val new_val bVars = 
     if elem v (fst (freeAndBoundVars new_val)) -- Si la variable que la abstracció està lligant està dins de les variables lliures del nou lamda-terme
-    then iSubst (La fnbv (subst lt v (Va fnbv))) old_val new_val nbVars -- Llavors s'ha defer una alpha-conversió canvinat les <v> per un altre nom per evitar la captura
+    then iSubst (La fnbv (subst lt v (Va fnbv))) old_val new_val nbVars -- Llavors s'ha de fer una alpha-conversió canvinat les <v> per un altre nom per evitar la captura
     else (La v (iSubst lt old_val new_val (v:bVars))) -- Sinó es pot cridar altre cop a iSubst amb el <lt> i afegint <v> a les variables lligades
     where
-        fnbv = firstNonBoundVar bVars -- Primera variable lliure
+        fnbv = firstNonBoundVar (bVars++(fst (freeAndBoundVars new_val))) -- Primera variable lliure que no estigui dins els variables lliures del nou valor, es fa aixi perquè sino dona problemes de recursivitat
         nbVars = replaceFirst v fnbv bVars -- Les noves variables lligades canviant la que estava abans lligada per la nova
 iSubst (AP lt1 lt2) old_val new_val bVars = (AP (iSubst lt1 old_val new_val bVars) (iSubst lt2 old_val new_val bVars))
 
@@ -120,9 +120,30 @@ beta_redueix x@(AP lt1 lt2) = x
 --          si no és un redex retorna el mateix lambda-terme.
 redueix_un_n :: LT -> LT
 redueix_un_n x@(Va v) = x
-redueix_un_n x@(La v lt) = La v (redueix_un_n lt)
+redueix_un_n x@(La v lt) = La v (snd (iRedueix_un_n lt))
 redueix_un_n x@(AP (La v lt1) lt2) = beta_redueix x
-redueix_un_n x@(AP lt1 lt2) = AP (redueix_un_n lt1) (redueix_un_n lt2)
+redueix_un_n x@(AP lt1 lt2) = if (fst new_lt1) then AP (snd new_lt1) (lt2) else AP (snd new_lt1) (snd new_lt2)
+    where
+        new_lt1 = iRedueix_un_n lt1
+        new_lt2 = iRedueix_un_n lt2
+
+
+--          Funció d'inmersió de redueix_un_n on es retorna un paràmetre addicional indicant si s'ha realitzat alguna beta-reducció o no
+-- Param 1: Lambda-terme sobre el que realitzar la reducció
+-- Retorna: Tupla on el primer valor indica si s'ha realitzat una beta-reducció i el segon valor és el lambda-terme resultant d'aplicar la funció
+iRedueix_un_n :: LT -> (Bool, LT)
+iRedueix_un_n x@(Va v) = (False, x) -- S'indica que no s'ha realitzat cap beta-reducció
+iRedueix_un_n x@(La v lt) = (fst red, La v (snd red))
+    where
+        red = iRedueix_un_n lt
+iRedueix_un_n x@(AP (La v lt1) lt2) = (True, beta_redueix x) -- S'indica que ja s'ha realitzar una beta-reducció
+iRedueix_un_n x@(AP lt1 lt2) = 
+    if (fst new_lt1) -- Si ja s'ha realitzat una beta-reducció a l'esquerra no fa falta fer-ho a la dreta
+    then (fst new_lt1, (AP (snd new_lt1) (lt2)))
+    else (fst new_lt2, (AP (snd new_lt1) (snd new_lt2))) -- Si no s'ha fet cap beta-reducció, llavors s'intenta fer a la dreta
+    where
+        new_lt1 = iRedueix_un_n lt1
+        new_lt2 = iRedueix_un_n lt2
 
 
 --          Funció on es passa un lambda-terme i s'aplica la primera beta-reducció en ordre aplicatiu.
@@ -138,7 +159,7 @@ redueix_un_a x@(AP y@(La v lt1) lt2) = redueix_un_n $  (AP  (if not(esta_normal 
 redueix_un_a x@(AP lt1 lt2) = AP (redueix_un_n lt1) (redueix_un_n lt2)
 
 
---          Normalitza un lambda-terme, retorna la llista de passes fetes fins arribar a la forma normal seguin l'ordre normal.
+--          Normalitza un lambda-terme, retorna la llista de passes fetes fins arribar a la forma normal seguint l'ordre normal.
 -- Param 1: Lambda-terme sobre el que buscar la forma normal.
 -- Retorna: Llista de lambda-termes, seqüència de reduccions, des del lambda-terme original <param 1> fins
 --          el lambda-terme en forma normal.
@@ -147,7 +168,7 @@ l_normalitza_n x@(Va v) = [x]
 l_normalitza_n x = if esta_normal x then [x] else [x] ++ l_normalitza_n (redueix_un_n x) -- S'agrupen els dos casos, s'ha de fer el mateix tant si és una abstracció com si és una aplicació
 
 
---          Normalitza un lambda-terme, retorna la llista de passes fetes fins arribar a la forma normal seguin l'ordre aplicatiu.
+--          Normalitza un lambda-terme, retorna la llista de passes fetes fins arribar a la forma normal seguint l'ordre aplicatiu.
 -- Param 1: Lambda-terme sobre el que buscar la forma normal.
 -- Retorna: Llista de lambda-termes, seqüència de reduccions, des del lambda-terme original <param 1> fins
 --          el lambda-terme en forma normal.
@@ -156,7 +177,7 @@ l_normalitza_a ap@(Va a) = [ap]
 l_normalitza_a x = if esta_normal x then [x] else [x] ++ l_normalitza_a (redueix_un_a x)
 
 
---          Normalitza un lambda-terme seguin l'ordre normal, retorna una tupla amb el nombre de passos necessàris per arribar a la forma normal
+--          Normalitza un lambda-terme seguint l'ordre normal, retorna una tupla amb el nombre de passos necessàris per arribar a la forma normal
 --          i la forma normal del lambda-terme.
 -- Param 1: Lambda-terme sobre el que buscar la forma normal.
 -- Retorna: Tupla amb el primer valor com el nombre de passos a realitzar per arribar a la forma normal
@@ -165,7 +186,7 @@ normalitza_n :: LT -> (Integer, LT)
 normalitza_n x = iNormalitza redueix_un_n x 0
 
 
---          Normalitza un lambda-terme seguin l'ordre aplicatiu, retorna una tupla amb el nombre de passos necessàris per arribar a la forma normal
+--          Normalitza un lambda-terme seguint l'ordre aplicatiu, retorna una tupla amb el nombre de passos necessàris per arribar a la forma normal
 --          i la forma normal del lambda-terme.
 -- Param 1: Lambda-terme sobre el que buscar la forma normal.
 -- Retorna: Tupla amb el primer valor com el nombre de passos a realitzar per arribar a la forma normal
@@ -212,65 +233,74 @@ cinc = (La "f" (La "x" (AP (Va "f") (AP (Va "f") (AP (Va "f") (AP (Va "f") (AP (
 
 suc = (La "n" (La "f" (La "x" (AP (AP (Va "n") (Va "f")) (AP (Va "f") (Va "x"))))))
 
+suma = (La "m" (La "n" (La "f" (La "x" (AP (AP (Va "m") (Va "f")) (AP (AP (Va "n") (Va "f")) (Va "x")))))))
+prod = (La "m" (La "n" (La "f" (La "x" (AP (AP (Va "m") (AP (Va "n") (Va "f"))) (Va "x"))))))
+eszero = (La "n" (AP (AP (Va "n") (La "x" false)) true))
+prefn = (La "f" (La "p" (AP (AP (tupla) (false)) (AP (AP (AP (meta_fst) (Va "p")) (AP (meta_snd) (Va "p"))) (AP (Va "f") (AP (meta_snd) (Va "p")))))))
+prec = (La "n" (La "f" (La "x" (AP (meta_snd) (AP (AP (Va "n") (AP (prefn) (Va "f"))) (AP (AP (tupla) (true)) (Va "x")))))))
+
+punt_fixe_T = (AP (La "x" (La "y" (AP (Va "y") (AP (AP (Va "x") (Va "x")) (Va "y"))))) (La "x" (La "y" (AP (Va "y") (AP (AP (Va "x") (Va "x")) (Va "y"))))))
+
+fact = (AP (punt_fixe_T) (La "f" (La "n" (AP (AP (AP (eszero) (Va "n")) (un)) (AP (AP (prod) (Va "n")) (AP (Va "f") (AP (prec) (Va "n"))))))))
+
 
 -------------------------------------------------------------------------------------------------------
 ----------------------------------------------- DE BRUIJN NOTATION ------------------------------------
 -------------------------------------------------------------------------------------------------------
 type Nombre = Int
-type Context=[Var] -- Llista de variables per el Context
-data LTdB = Nat Nombre |Ap LTdB LTdB | L LTdB -- Tipus de dades per representar els lambdes termes en format debruijn
+type Context = [Var] -- Llista de variables per el Context
+data LTdB = Nat Nombre | Ap LTdB LTdB | L LTdB -- Tipus de dades per representar els lambdes termes en format debruijn
 
--- Instancia d'igualitat <Eq> per comparar dues termes en format Debruijn
--- Param 1 : Lambda Terme en format Debruijn <LTdB>
--- Param 2 : Lambda Terme en format Debruijn <LTdB>
--- Retorna : True si les dues termes son iguals altrament Fals
+--          Instancia d'igualitat <Eq> per comparar dues termes en format Debruijn
+-- Param 1: Lambda Terme en format Debruijn <LTdB>
+-- Param 2: Lambda Terme en format Debruijn <LTdB>
+-- Retorna: True si les dues termes son iguals altrament Fals
 instance Eq LTdB where
     (==) (Nat x) (Nat x') = x==x'
     (==) (L l1) (L l2) = l1 == l2
     (==) (Ap l1 l2) (Ap l1' l2') = l1==l1' && l2==l2'
     (==) _  _ = False
 
--- Instancia  <show> per poder mostrar per pantalla els termes en format debruijn
--- Param 1 : Lambda Terme en format Debruijn <LTdB>
--- Param 2 : Lambda Terme en format Debruijn <LTdB>
--- Retorna : Mostra per pantalla el terme amb el seguent format ex --> \.0 equival a \x.x 
-
+--          Instancia  <show> per poder mostrar per pantalla els termes en format Debruijn
+-- Param 1: Lambda Terme en format Debruijn <LTdB>
+-- Param 2: Lambda Terme en format Debruijn <LTdB>
+-- Retorna: Mostra per pantalla el terme amb el seguent format ex --> \.0 equival a \x.x 
 instance Show LTdB where 
     show (Nat x) = show x
     show (L lt) = "(\\."++ show lt ++ ")"
     show (Ap lt lv) = "("++ show lt++" "++ show lv ++ ")"
 
--- Retorna l'index d'un element x dins d'una llista
--- Param 1 : llista d'elements
--- Param 2 : l'element que estem buscan
--- Retorna : retorna la posicio de l'element x ,i si no hi es llaçem una excepcio
-index::Context->Var->Int
+--          Retorna l'index d'un element x dins d'una llista
+-- Param 1: Llista d'elements
+-- Param 2: L'element que estem buscan
+-- Retorna: Retorna la posicio de l'element x ,i si no hi es llaçem una excepcio
+index :: Context -> Var -> Int
 index [] _ = error "variable no esta a la llista"
 index (x:xs) x' | x == x' = 0
                 | otherwise = 1 + index xs x'
 
                 
--- funcio inmersiva que rep un  LT i retorna aquest mateix terme pero en format debruijn
--- Param 1 : Lambda terme que volem transformar en format debruijn
--- Param 2 : llista variables del context
--- Retorna : el lambda terme en forma Debruijn <LTdB>
-i_deBruijn::LT->Context->LTdB
+--          Funció inmersiva que rep un  LT i retorna aquest mateix terme pero en format Debruijn
+-- Param 1: Lambda terme que volem transformar en format Debruijn
+-- Param 2: Llista variables del context
+-- Retorna: El lambda terme en forma Debruijn <LTdB>
+i_deBruijn :: LT -> Context -> LTdB
 i_deBruijn va@(Va x) xs  = Nat (index xs x)
 i_deBruijn la@(La x lt) xs = L (i_deBruijn lt (x:xs))
 i_deBruijn ap@(AP a b) xs = Ap (i_deBruijn a xs) (i_deBruijn b xs)
 
 
--- Funcio que rep un <LT> i retorna aquest mateix terme pero en format debruijn <LTdB> 
--- Param 1 : Lambda terme que volem transformar en format debruijn
--- Retorna : el lambda terme en forma Debruijn <LTdB>
-a_deBruijn::LT->LTdB
+--          Funció que rep un <LT> i retorna aquest mateix terme pero en format Debruijn <LTdB> 
+-- Param 1: Lambda terme que volem transformar en format Debruijn
+-- Retorna: El lambda terme en forma Debruijn <LTdB>
+a_deBruijn :: LT -> LTdB
 a_deBruijn lt = i_deBruijn lt ["x","y","z","a","b","c"] -- li passem el lamda i la llista del context
 
 
--- funcio inmersiva que rep un  LTdB i retorna aquest mateix terme pero en format LT
--- Param 1 : Lambda terme que volem transformar en format LT
--- Param 2 : llista variables del context
--- Retorna : el lambda terme en forma Debruijn LT
+--          Funció inmersiva que rep un  LTdB i retorna aquest mateix terme pero en format LT
+-- Param 1: Lambda terme que volem transformar en format LT
+-- Param 2: Llista variables del context
+-- Retorna: El lambda terme en forma Debruijn LT
 i_de_deBruijn::LTdB->Context->LT
 i_de_deBruijn va@(Nat v) xs = Va (xs!!v)
 i_de_deBruijn la@(L lt) xs = La t' (i_de_deBruijn lt (t':xs))
@@ -280,20 +310,11 @@ i_de_deBruijn la@(L lt) xs = La t' (i_de_deBruijn lt (t':xs))
 
 i_de_deBruijn ap@(Ap l1 l2) xs = AP (i_de_deBruijn l1 xs) (i_de_deBruijn l2 xs) 
 
--- Funcio que rep un <LTdB> i retorna aquest mateix terme pero en format debruijn <LT> 
+-- Funció que rep un <LTdB> i retorna aquest mateix terme pero en format Debruijn <LT> 
 -- Param 1 : Lambda terme que volem transformar en format LTdB
--- Retorna : el lambda terme en forma Debruijn <LT>
+-- Retorna : El lambda terme en forma Debruijn <LT>
 de_deBruijn::LTdB -> LT
 de_deBruijn ltd = i_de_deBruijn ltd ["x","y","z","a","b","c"]
-
-
-
-
-
-
-
-
-
 
 
 
@@ -316,7 +337,7 @@ firstNonBoundVar bVars = (possible_vars \\ bVars)!!0 -- Es fa la diferència ent
 replaceFirst :: (Eq a) => a -> a -> [a] -> [a]
 replaceFirst _ _ [] = []
 replaceFirst a x (b:bc) | a == b    = x:bc 
-                     | otherwise = b : replaceFirst a x bc
+                        | otherwise = b:(replaceFirst a x bc)
 
 
 --          Inmersió de la funció normalitza_n i normalitza_a. 
@@ -329,11 +350,11 @@ iNormalitza :: (LT -> LT) -> LT -> Integer -> (Integer, LT)
 iNormalitza _ x@(Va v) n = (n,x)
 iNormalitza f x n = if esta_normal x then (n,x) else iNormalitza f (f x) (n+1)
 
---        Transforma una llista de chars en una llista d'strings 
--- Param 1: llista de chars per tranformar
+--          Transforma una llista de chars en una llista de Var 
+-- Param 1: Llista de chars per tranformar
 -- Retorna: El mateix que normalitza_n i normalitza_a
 charToString :: [Char] -> [Var]
-charToString [] =[]
+charToString [] = []
 charToString (c:cs) = [c]:charToString cs
 
 ------------------------------------- TERMES PER PROVAR EL FUNCIONAMENT ---------------------------
