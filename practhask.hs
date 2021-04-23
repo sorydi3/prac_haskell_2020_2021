@@ -205,19 +205,6 @@ true = (La "x" (La "y" (Va "x")))
 false = (La "x" (La "y" (Va "y")))
 meta_not = (La "t" (AP (AP (Va "t") (false)) (true)))
 
----------------------------------------- OPERANDS ----------------------------------------
--- Rep dos lambda-termes i aplica una AND lògica entre ells
-meta_and :: LT -> LT -> LT --------- ---> No es pot posar and pq ja existeix aquesta funcio
-meta_and lt1 lt2 = snd (normalitza_n (AP (AP ((La "x" (La "y" (AP (AP (Va "x") (Va "y")) false)))) lt1) lt2))
-
--- Rep dos lambda-termes i aplica una OR lògica entre ells
-meta_or :: LT -> LT -> LT
-meta_or lt1 lt2 = snd (normalitza_n (AP (AP (La "x" (La "y" (AP (AP (Va "x") (true)) (Va "y")))) (lt1)) (lt2)))
-
--- Rep dos lambda-termes i aplica una XOR lògica entre ells
-meta_xor :: LT -> LT -> LT
-meta_xor lt1 lt2 = snd (normalitza_n (AP (AP (La "x" (La "y" (AP (AP (Va "x") (AP (AP (Va "y") (false)) (true))) (Va "y")))) (lt1)) (lt2)))
-
 ------------------------------------ TUPLES I LLISTES ------------------------------------
 meta_fst = (La "x" (AP (Va "x") true))
 meta_snd = (La "x" (AP (Va "x") false))
@@ -301,7 +288,7 @@ a_deBruijn lt = i_deBruijn lt ["x","y","z","a","b","c"] -- li passem el lamda i 
 -- Param 1: Lambda terme que volem transformar en format LT
 -- Param 2: Llista variables del context
 -- Retorna: El lambda terme en forma Debruijn LT
-i_de_deBruijn::LTdB->Context->LT
+i_de_deBruijn :: LTdB -> Context -> LT
 i_de_deBruijn va@(Nat v) xs = Va (xs!!v)
 i_de_deBruijn la@(L lt) xs = La t' (i_de_deBruijn lt (t':xs))
                             where
@@ -310,10 +297,10 @@ i_de_deBruijn la@(L lt) xs = La t' (i_de_deBruijn lt (t':xs))
 
 i_de_deBruijn ap@(Ap l1 l2) xs = AP (i_de_deBruijn l1 xs) (i_de_deBruijn l2 xs) 
 
--- Funció que rep un <LTdB> i retorna aquest mateix terme pero en format Debruijn <LT> 
--- Param 1 : Lambda terme que volem transformar en format LTdB
--- Retorna : El lambda terme en forma Debruijn <LT>
-de_deBruijn::LTdB -> LT
+--          Funció que rep un <LTdB> i retorna aquest mateix terme pero en format Debruijn <LT> 
+-- Param 1: Lambda terme que volem transformar en format LTdB
+-- Retorna: El lambda terme en forma Debruijn <LT>
+de_deBruijn :: LTdB -> LT
 de_deBruijn ltd = i_de_deBruijn ltd ["x","y","z","a","b","c"]
 
 
@@ -396,3 +383,6 @@ t7 = (La "x" (La "y" (La "s" (La "z" (AP (AP (Va "x") (Va "z")) (AP (AP (Va "y")
 
 t7_d::LTdB
 t7_d = a_deBruijn t7
+
+t8 :: LT
+t8 = AP meta_fst (AP (AP tupla zero) un)
