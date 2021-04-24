@@ -1,4 +1,3 @@
--- 1
 import Data.List
 import Debug.Trace
 type Var = String
@@ -14,6 +13,10 @@ instance Show LT where
 
 instance Eq LT where 
     (==) lt1 lt2 = (a_deBruijn lt1) == (a_deBruijn lt2)
+
+-- Per ordenar es compten el nombre total de variables que hi ha, tant lliures com lligades
+instance Ord LT where
+    lt1 <= lt2 = (length (fst (freeAndBoundVars lt1))) + ((length (snd (freeAndBoundVars lt1)))) <= (length (fst (freeAndBoundVars lt2))) + ((length (snd (freeAndBoundVars lt2))))
 
 
 --          Funció que retorna una tupla amb les variables lliures i lligades del lambda-terme donat.
