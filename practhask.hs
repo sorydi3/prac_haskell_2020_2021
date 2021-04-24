@@ -240,7 +240,7 @@ instance Show LTdB where
 -- Param 1: Lambda terme que volem transformar en format Debruijn
 -- Retorna: El lambda terme en forma Debruijn <LTdB>
 a_deBruijn :: LT -> LTdB
-a_deBruijn lt = i_deBruijn lt possible_vars -- li passem el lamda i la llista del context
+a_deBruijn lt = i_deBruijn lt ["x","y","z","a","b","c","q","s","f","n"] -- li passem el lamda i la llista del context
 
 
 --          Funció inmersiva que rep un  LT i retorna aquest mateix terme pero en format Debruijn
@@ -257,7 +257,7 @@ i_deBruijn ap@(AP a b) xs = Ap (i_deBruijn a xs) (i_deBruijn b xs)
 -- Param 1: Lambda terme que volem transformar en format LTdB
 -- Retorna: El lambda terme en forma Debruijn <LT>
 de_deBruijn :: LTdB -> LT
-de_deBruijn ltd = i_de_deBruijn ltd possible_vars
+de_deBruijn ltd = i_de_deBruijn ltd ["x","y","z","a","b","c","q","s","f","n"]
 
 
 --          Funció inmersiva que rep un  LTdB i retorna aquest mateix terme pero en format LT
