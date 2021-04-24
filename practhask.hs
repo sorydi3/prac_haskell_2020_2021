@@ -6,7 +6,6 @@ data LT  = Va Var | La Var LT | AP LT LT
 -- Llista de lletres de l'alfabet com a possibles noms de variables
 possible_vars = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
 
---"Show lambda terme"
 instance Show LT where 
     show (Va x) = x
     show (La v lt) = "(\\"++v++". "++ show lt ++ ")"
@@ -15,31 +14,6 @@ instance Show LT where
 
 instance Eq LT where 
     (==) lt1 lt2 = (a_deBruijn lt1) == (a_deBruijn lt2)
-
--- NO FUNCIONAAA ESTOY EN ELLO
--- helper functions for association lists
-type PairList a = [(a,a)]
--- Donat valor de l'equerra retorna el de la dreta
-getValueRight :: (Eq a, Show a) => a -> PairList a-> Maybe a
-getValueRight x p@((a,b):ps)
-    | (length p) == 0 = Nothing
-    | otherwise = if x == a then Just b else getValueRight x ps
-getValueRight x p = Nothing
-
-addPair :: a -> b -> [(a, b)] -> [(a, b)]
-addPair a b l = (a,b):l
-
--- Donat el valor de la dreta et retorna el de l'esquerra
-getValueLeft :: (Eq a, Show a) => a -> PairList a -> Maybe a
-getValueLeft x = getValueRight x . map (\(a,b) -> (b,a))
-
-
-(=*=) :: LT -> LT -> Bool
-a =*= b = eq [] a b where
-  eq list (La x lt1) (La y lt2) = eq (addPair x y list) lt1 lt2
-  eq list (Va x) (Va y) = if (length list) == 0 then x == y else getValueRight x list == (Just y) && (Just x) == getValueLeft y list
-  eq list (AP lt1 lt2) (AP lt3 lt4) = eq list lt1 lt3 && eq list lt2 lt4 -- Simplement mirar si els lt son iguals dos a dos
-  eq list _ _ = False
 
 
 --          Funció que retorna una tupla amb les variables lliures i lligades del lambda-terme donat.
