@@ -10,7 +10,7 @@ instance Show LT where
     show (La v lt) = "(\\"++v++". "++ show lt ++ ")"
     show (AP lt lv) = "("++ show lt++" "++ show lv ++ ")"
 
--- Comprova si Dos LT son iguals utilitzant l'igualitat de Debruijn 
+-- Comprova si Dos LT son iguals utilitzant l'igualitat de de Bruijn 
 instance Eq LT where 
     (==) lt1 lt2 = (a_deBruijn lt1) == (a_deBruijn lt2)
 
@@ -233,9 +233,9 @@ type Context = [Var] -- Llista de variables per el Context
 data LTdB = Nat Nombre | Ap LTdB LTdB | L LTdB -- Tipus de dades per representar els lambdes termes en format debruijn
 
 
---          Instancia d'igualitat <Eq> per comparar dues termes en format Debruijn
--- Param 1: Lambda Terme en format Debruijn <LTdB>
--- Param 2: Lambda Terme en format Debruijn <LTdB>
+--          Instancia d'igualitat <Eq> per comparar dues termes en format de Bruijn
+-- Param 1: Lambda Terme en format de Bruijn <LTdB>
+-- Param 2: Lambda Terme en format de Bruijn <LTdB>
 -- Retorna: True si les dues termes son iguals altrament Fals
 instance Eq LTdB where
     (==) (Nat x) (Nat x') = x==x'
@@ -245,9 +245,9 @@ instance Eq LTdB where
 
 
 
---          Instancia  <show> per poder mostrar per pantalla els termes en format Debruijn
--- Param 1: Lambda Terme en format Debruijn <LTdB>
--- Param 2: Lambda Terme en format Debruijn <LTdB>
+--          Instancia  <show> per poder mostrar per pantalla els termes en format de Bruijn
+-- Param 1: Lambda Terme en format de Bruijn <LTdB>
+-- Param 2: Lambda Terme en format de Bruijn <LTdB>
 -- Retorna: Mostra per pantalla el terme amb el seguent format ex --> \.0 equival a \x.x 
 instance Show LTdB where 
     show (Nat x) = show x
@@ -255,26 +255,26 @@ instance Show LTdB where
     show (Ap lt lv) = "("++ show lt++" "++ show lv ++ ")"
 
 
---          Funció que rep un <LT> i retorna aquest mateix terme pero en format Debruijn <LTdB> 
--- Param 1: Lambda terme que volem transformar en format Debruijn
--- Retorna: El lambda terme en forma Debruijn <LTdB>
+--          Funció que rep un <LT> i retorna aquest mateix terme pero en format de Bruijn <LTdB> 
+-- Param 1: Lambda terme que volem transformar en format de Bruijn
+-- Retorna: El lambda terme en forma de Bruijn <LTdB>
 a_deBruijn :: LT -> LTdB
 a_deBruijn lt = i_deBruijn lt context -- li passem el lamda i la llista del context
 
 
---          Funció inmersiva que rep un  LT i retorna aquest mateix terme pero en format Debruijn
--- Param 1: Lambda terme que volem transformar en format Debruijn
+--          Funció inmersiva que rep un  LT i retorna aquest mateix terme pero en format de Bruijn
+-- Param 1: Lambda terme que volem transformar en format de Bruijn
 -- Param 2: Llista variables del context
--- Retorna: El lambda terme en forma Debruijn <LTdB>
+-- Retorna: El lambda terme en forma de Bruijn <LTdB>
 i_deBruijn :: LT -> Context -> LTdB
 i_deBruijn va@(Va x) xs  = Nat (index xs x)
 i_deBruijn la@(La x lt) xs = L (i_deBruijn lt (x:xs))
 i_deBruijn ap@(AP a b) xs = Ap (i_deBruijn a xs) (i_deBruijn b xs)
 
 
---          Funció que rep un <LTdB> i retorna aquest mateix terme pero en format Debruijn <LT> 
+--          Funció que rep un <LTdB> i retorna aquest mateix terme pero en format de Bruijn <LT> 
 -- Param 1: Lambda terme que volem transformar en format LTdB
--- Retorna: El lambda terme en forma Debruijn <LT>
+-- Retorna: El lambda terme en forma de Bruijn <LT>
 de_deBruijn :: LTdB -> LT
 de_deBruijn ltd = i_de_deBruijn ltd context
 
@@ -282,7 +282,7 @@ de_deBruijn ltd = i_de_deBruijn ltd context
 --          Funció inmersiva que rep un  LTdB i retorna aquest mateix terme pero en format LT
 -- Param 1: Lambda terme que volem transformar en format LT
 -- Param 2: Llista variables del context
--- Retorna: El lambda terme en forma Debruijn LT
+-- Retorna: El lambda terme en forma de Bruijn LT
 i_de_deBruijn :: LTdB -> Context -> LT
 i_de_deBruijn va@(Nat v) xs = Va (xs!!v)
 i_de_deBruijn la@(L lt) xs = La t' (i_de_deBruijn lt (t':xs))
