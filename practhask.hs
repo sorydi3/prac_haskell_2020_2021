@@ -1,5 +1,4 @@
 import Data.List
-import Debug.Trace
 type Var = String
 data LT  = Va Var | La Var LT | AP LT LT
 -- Llista de lletres de l'alfabet com a possibles noms de variables
@@ -48,7 +47,7 @@ subst x@(La v lt) old_val new_val = iSubst x old_val new_val [v] -- Es crida a i
 subst (AP lt1 lt2) old_val new_val = (AP (iSubst lt1 old_val new_val []) (iSubst lt2 old_val new_val []))
 
 
---          Funció d'inmersió de subst. Realitza el mateix però s'ha de passar un paràmetre addicional
+--          Funció d'immersió de subst. Realitza el mateix però s'ha de passar un paràmetre addicional
 --          indicant quines són les variables lligades en el moment de cridar a la funció.
 -- Param 1: Lambda-terme on realitzar la substitució.
 -- Param 2: Variable a substituir.
@@ -57,7 +56,10 @@ subst (AP lt1 lt2) old_val new_val = (AP (iSubst lt1 old_val new_val []) (iSubst
 -- Retorna: Retorna el lambda-terme <param 1> on s'han substituit les instàncies lliures de 
 --          <param 2> per <param 3> sense realitzar captura.
 iSubst :: LT -> Var -> LT -> [Var] -> LT
-iSubst (Va v) old_val new_val bVars = if (v == old_val) && not (elem v bVars) then new_val else Va v -- Si és la variable que es vol canviar i no està lligada, llavors substituir per el nou valor
+iSubst (Va v) old_val new_val bVars = 
+    if (v == old_val) && not (elem v bVars) 
+    then new_val 
+    else Va v -- Si és la variable que es vol canviar i no està lligada, llavors substituir per el nou valor
 iSubst x@(La v lt) old_val new_val bVars = 
     if elem v (fst (freeAndBoundVars new_val)) -- Si la variable que la abstracció està lligant està dins de les variables lliures del nou lamda-terme
     then iSubst (La fnbv (subst lt v (Va fnbv))) old_val new_val nbVars -- Llavors s'ha de fer una alpha-conversió canvinat les <v> per un altre nom per evitar la captura
@@ -98,13 +100,16 @@ redueix_un_n :: LT -> LT
 redueix_un_n x@(Va v) = x
 redueix_un_n x@(La v lt) = La v (snd (iRedueix_un_n lt))
 redueix_un_n x@(AP (La v lt1) lt2) = beta_redueix x
-redueix_un_n x@(AP lt1 lt2) = if (fst new_lt1) then AP (snd new_lt1) (lt2) else AP (snd new_lt1) (snd new_lt2)
+redueix_un_n x@(AP lt1 lt2) = 
+    if (fst new_lt1) 
+    then AP (snd new_lt1) (lt2) 
+    else AP (snd new_lt1) (snd new_lt2)
     where
         new_lt1 = iRedueix_un_n lt1
         new_lt2 = iRedueix_un_n lt2
 
 
---          Funció d'inmersió de redueix_un_n on es retorna un paràmetre addicional indicant si s'ha realitzat alguna beta-reducció o no
+--          Funció d'immersió de redueix_un_n on es retorna un paràmetre addicional indicant si s'ha realitzat alguna beta-reducció o no
 -- Param 1: Lambda-terme sobre el que realitzar la reducció
 -- Retorna: Tupla on el primer valor indica si s'ha realitzat una beta-reducció i el segon valor és el lambda-terme resultant d'aplicar la funció
 iRedueix_un_n :: LT -> (Bool, LT)
@@ -127,11 +132,22 @@ iRedueix_un_n x@(AP lt1 lt2) =
 -- Param 1: Lambda-terme sobre el que realitzar la reducció.
 -- Retorna: El lambda-terme <param 1> amb la primera beta-reducció en ordre aplicatiu feta, 
 --          si no és un redex retorna el mateix lambda-terme.
-redueix_un_a::LT->LT
+redueix_un_a :: LT -> LT
 redueix_un_a x@(Va v) = x
 redueix_un_a x@(La v lt) | not (esta_normal lt) = La v (redueix_un_a lt)
                          | otherwise = x
-redueix_un_a x@(AP y@(La v lt1) lt2) = redueix_un_n $  (AP  (if not(esta_normal y) then (redueix_un_a y) else y) (if not(esta_normal lt2) then (redueix_un_a lt2) else lt2))
+redueix_un_a x@(AP y@(La v lt1) lt2) = redueix_un_n $ 
+    (AP  (
+            if not(esta_normal y) 
+            then (redueix_un_a y) 
+            else y
+        ) 
+        (
+            if not(esta_normal lt2)
+            then (redueix_un_a lt2)
+            else lt2
+        )
+    )
 redueix_un_a x@(AP lt1 lt2) = AP (redueix_un_n lt1) (redueix_un_n lt2)
 
 
@@ -297,7 +313,7 @@ replaceFirst a x (b:bc) | a == b    = x:bc
                         | otherwise = b:(replaceFirst a x bc)
 
 
---          Inmersió de la funció normalitza_n i normalitza_a. 
+--          Immersió de la funció normalitza_n i normalitza_a. 
 --          Realitza la mateixa funció excepte que a aqueste se li passa dos paràmetres extres.
 -- Param 1: Funció a aplicar sobre el <param 2>
 -- Param 2: Lambda-terme sobre el que buscar la forma normal.
@@ -368,10 +384,23 @@ t7_d = a_deBruijn t7
 t8 :: LT
 t8 = AP meta_fst (AP (AP tupla zero) un)
 
-lt1 = (AP (AP (La "x" (La "y" (AP (Va "x") (Va "y")))) (Va "w")) (Va "z"))
-lt2 = (AP (AP (La "s" (AP (Va "s") (Va "s"))) (La "q" (Va "q"))) (La "q" (Va "q")))
-lt3 = (AP (La "x" (AP (Va "x") (Va "y"))) (La "z" (AP (Va "w") (La "w" (AP (AP (AP (Va "w") (Va "z")) (Va "y")) (Va "x"))))))
-lt4 = (AP (AP (La "z" (Va "z")) (La "q" (AP (Va "q") (Va "q")))) (La "s" (AP (Va "s") (Va "a"))))
-lt5 = (AP (AP (La "z" (Va "z")) (La "z" (AP (Va "z") (Va "z")))) (La "z" (AP (Va "z") (Va "q"))))
-lt6 = (AP (AP (La "s" (La "q" (AP (AP (Va "s") (Va "q")) (Va "q")))) (La "a" (Va "a"))) (Va "b"))
-lt7 = (AP (AP (La "s" (La "q" (AP (AP (Va "s") (Va "q")) (Va "q")))) (La "q" (Va "q"))) (Va "q"))
+t9::LT
+t9 = (AP (AP (La "x" (La "y" (AP (Va "x") (Va "y")))) (Va "w")) (Va "z"))
+
+t9_d::LTdB
+t9_d = a_deBruijn t9
+
+t10::LT
+t10 = (AP (AP (La "s" (La "q" (AP (AP (Va "s") (Va "q")) (Va "q")))) (La "q" (Va "q"))) (Va "q"))
+
+t10_d::LTdB
+t10_d = a_deBruijn t10
+
+
+suma_1_2 = normalitza_n (AP (AP (suma) (un)) (dos))
+suma_5_5 = normalitza_n (AP (AP (suma) (cinc)) (cinc))
+prod_4_5 = normalitza_n (AP (AP (prod) (quatre)) (cinc))
+fact_0 = normalitza_n (AP fact zero)
+fact_1 = normalitza_n (AP fact un)
+fact_2 = normalitza_n (AP fact dos)
+fact_3 = normalitza_n (AP fact tres)
