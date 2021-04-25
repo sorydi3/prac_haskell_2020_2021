@@ -10,7 +10,7 @@ instance Show LT where
     show (La v lt) = "(\\"++v++". "++ show lt ++ ")"
     show (AP lt lv) = "("++ show lt++" "++ show lv ++ ")"
 
--- Comprova si Dos LT son iguals utilitzant, mitjançan l'igualitat de Debruijn 
+-- Comprova si Dos LT son iguals utilitzant l'igualitat de Debruijn 
 instance Eq LT where 
     (==) lt1 lt2 = (a_deBruijn lt1) == (a_deBruijn lt2)
 
