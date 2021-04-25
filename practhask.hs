@@ -4,13 +4,13 @@ data LT  = Va Var | La Var LT | AP LT LT
 -- Llista de lletres de l'alfabet com a possibles noms de variables
 possible_vars = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
 
--- Formateja la sortida 
+-- Mostra per pantalla un lambda terme de tipus <LT> 
 instance Show LT where 
     show (Va x) = x
     show (La v lt) = "(\\"++v++". "++ show lt ++ ")"
     show (AP lt lv) = "("++ show lt++" "++ show lv ++ ")"
 
-
+-- Comprova si Dos LT son iguals utilitzant, mitjançan l'igualitat de Debruijn 
 instance Eq LT where 
     (==) lt1 lt2 = (a_deBruijn lt1) == (a_deBruijn lt2)
 
@@ -211,6 +211,7 @@ fact = (AP (punt_fixe_T) (La "f" (La "n" (AP (AP (AP (eszero) (Va "n")) (un)) (A
 ----------------------------------------------- DE BRUIJN NOTATION ------------------------------------
 -------------------------------------------------------------------------------------------------------
 type Nombre = Int
+context = ["x","y","z","a","b","c","q","s","f","n"]
 type Context = [Var] -- Llista de variables per el Context
 data LTdB = Nat Nombre | Ap LTdB LTdB | L LTdB -- Tipus de dades per representar els lambdes termes en format debruijn
 
@@ -224,6 +225,7 @@ instance Eq LTdB where
     (==) (L l1) (L l2) = l1 == l2
     (==) (Ap l1 l2) (Ap l1' l2') = l1==l1' && l2==l2'
     (==) _  _ = False
+
 
 
 --          Instancia  <show> per poder mostrar per pantalla els termes en format Debruijn
@@ -240,7 +242,7 @@ instance Show LTdB where
 -- Param 1: Lambda terme que volem transformar en format Debruijn
 -- Retorna: El lambda terme en forma Debruijn <LTdB>
 a_deBruijn :: LT -> LTdB
-a_deBruijn lt = i_deBruijn lt ["x","y","z","a","b","c","q","s","f","n"] -- li passem el lamda i la llista del context
+a_deBruijn lt = i_deBruijn lt context -- li passem el lamda i la llista del context
 
 
 --          Funció inmersiva que rep un  LT i retorna aquest mateix terme pero en format Debruijn
@@ -257,7 +259,7 @@ i_deBruijn ap@(AP a b) xs = Ap (i_deBruijn a xs) (i_deBruijn b xs)
 -- Param 1: Lambda terme que volem transformar en format LTdB
 -- Retorna: El lambda terme en forma Debruijn <LT>
 de_deBruijn :: LTdB -> LT
-de_deBruijn ltd = i_de_deBruijn ltd ["x","y","z","a","b","c","q","s","f","n"]
+de_deBruijn ltd = i_de_deBruijn ltd context
 
 
 --          Funció inmersiva que rep un  LTdB i retorna aquest mateix terme pero en format LT
